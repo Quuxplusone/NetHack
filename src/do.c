@@ -750,7 +750,7 @@ static NEARDATA boolean at_ladder = FALSE;
 int
 dodown()
 {
-	struct trap *trap = 0;
+	struct trap *trap = t_at(u.ux, u.uy);
 	boolean stairs_down = ((u.ux == xdnstair && u.uy == ydnstair) ||
 		    (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up)),
 		ladder_down = (u.ux == xdnladder && u.uy == ydnladder);
@@ -788,38 +788,36 @@ dodown()
 	    return (0);   /* didn't move */
 	}
 	if (!stairs_down && !ladder_down) {
-		if (!(trap = t_at(u.ux,u.uy)) ||
+	    if (trap && !u.utrap && (trap->ttyp == SPIKED_PIT || trap->ttyp == PIT)) {
+		You("carefully ease yourself into the %spit.",
+		    (trap->ttyp == SPIKED_PIT) ? "spiked " : "");
+
+		/* if you're fumbling or clumsy, you slip */
+		if ((Fumbling || rn2(ACURR(A_DEX) - 2) == 0) &&
+		    !is_clinger(youmonst.data))
+		{
+		    You("slip while trying to enter the %spit!",
+			(trap->ttyp == SPIKED_PIT) ? "spiked " : "");
+		    dotrap(trap, FORCEBUNGLE);
+		    exercise(A_DEX, FALSE);
+		} else {
+		    u.utrap = rn1(6,2);  /* default pit time */
+		    u.utraptype = TT_PIT;
+		    vision_full_recalc = 1;
+		}
+		return 1;
+	    } else if (!trap ||
 			(trap->ttyp != TRAPDOOR && trap->ttyp != HOLE)
 			|| !Can_fall_thru(&u.uz) || !trap->tseen) {
 
-			/* HAS to be a pit at this point */
-			if (trap && !u.utrap) {
-			    You("carefully ease yourself into the %spit.",
-				(trap->ttyp == SPIKED_PIT) ? "spiked " : "");
-
-			    /* if you're fumbling or clumsy, you slip */
-			    if ((Fumbling || rn2(ACURR(A_DEX) - 2) == 0) &&
-				!is_clinger(youmonst.data))
-			    {
-				You("slip while trying to enter the %spit!",
-				    (trap->ttyp == SPIKED_PIT) ? "spiked " : "");
-				dotrap(trap, FORCEBUNGLE);
-				exercise(A_DEX, FALSE);
-			    } else {
-				u.utrap = rn1(6,2);  /* default pit time */
-				u.utraptype = TT_PIT;
-				vision_full_recalc = 1;
-			    }
-
-			    return 1;
-			} else if (flags.autodig && !flags.nopick &&
-				uwep && is_pick(uwep)) {
-				return use_pick_axe2(uwep);
-			} else {
-				You_cant("go down here.");
-				return(0);
-			}
+		if (flags.autodig && !flags.nopick &&
+			uwep && is_pick(uwep)) {
+		    return use_pick_axe2(uwep);
+		} else {
+		    You_cant("go down here.");
+		    return(0);
 		}
+	    }
 	}
 	if(u.ustuck) {
 		You("are %s, and cannot go down.",
