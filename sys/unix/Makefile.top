@@ -214,6 +214,19 @@ dofiles-nodlb:
 			$(CHGRP) $(GAMEGRP) $(DAT) ; \
 			chmod $(FILEPERM) $(DAT) )
 
+update-ubuntu: $(GAME) recover $(VARDAT) dungeon spec_levs check-dlb
+#	Assume that the nethack-console package has been installed
+#	already, and the user just wants to install this patched
+#	version over top of it.  On Ubuntu, nethack-console lives
+#	in the /usr/lib/games/nethack/ directory.
+#	Notice that the correct command is "sudo make update-ubuntu".
+	cp src/$(GAME) /usr/lib/games/nethack/nethack-console
+	cp util/recover dat/nhdat /usr/lib/games/nethack/
+	chgrp games /usr/lib/games/nethack/nethack-console
+	chgrp games /usr/lib/games/nethack/recover
+	chmod $(GAMEPERM) /usr/lib/games/nethack/nethack-console
+	chmod $(GAMEPERM) /usr/lib/games/nethack/recover
+
 update: $(GAME) recover $(VARDAT) dungeon spec_levs
 #	(don't yank the old version out from under people who're playing it)
 	-mv $(GAMEDIR)/$(GAME) $(GAMEDIR)/$(GAME).old
