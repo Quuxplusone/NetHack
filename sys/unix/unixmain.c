@@ -30,13 +30,17 @@ static void FDECL(chdirx, (const char *,BOOLEAN_P));
 static boolean NDECL(whoami);
 static void FDECL(process_options, (int, char **));
 
-#ifdef _M_UNIX
+#ifdef UNICODE
+extern void NDECL(init_utf8_cons);
+#else
+# ifdef _M_UNIX
 extern void NDECL(check_sco_console);
 extern void NDECL(init_sco_cons);
-#endif
-#ifdef __linux__
+# endif
+# ifdef __linux__
 extern void NDECL(check_linux_console);
 extern void NDECL(init_linux_cons);
+# endif
 #endif
 
 static void NDECL(wd_message);
@@ -143,20 +147,26 @@ char *argv[];
 	chdirx(dir,1);
 #endif
 
-#ifdef _M_UNIX
+#ifndef UNICODE
+# ifdef _M_UNIX
 	check_sco_console();
-#endif
-#ifdef __linux__
+# endif
+# ifdef __linux__
 	check_linux_console();
+# endif
 #endif
 	initoptions();
 	init_nhwindows(&argc,argv);
 	exact_username = whoami();
-#ifdef _M_UNIX
+#ifdef UNICODE
+	init_utf8_cons();
+#else
+# ifdef _M_UNIX
 	init_sco_cons();
-#endif
-#ifdef __linux__
+# endif
+# ifdef __linux__
 	init_linux_cons();
+# endif
 #endif
 
 	/*
