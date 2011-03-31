@@ -75,7 +75,7 @@ NHSROOT=..
 
 # flags for Linux
 #   compile normally
-# CFLAGS = -O2 -fomit-frame-pointer -I../include
+CFLAGS = -O2 -fomit-frame-pointer -I../include
 # LFLAGS = -L/usr/X11R6/lib
 #   OR compile backwards compatible a.out format
 # CFLAGS = -O2 -b i486-linuxaout -fomit-frame-pointer -I../include
@@ -104,8 +104,8 @@ OBJDIR = ../src
 
 # yacc/lex programs to use to generate *_comp.h, *_lex.c, and *_yacc.c.
 # if, instead of yacc/lex you have bison/flex, comment/uncomment the following.
-YACC     = yacc
-LEX      = lex
+YACC     = bison -y
+LEX      = flex
 # YACC     = bison -y
 # YACC     = byacc
 # LEX      = flex
