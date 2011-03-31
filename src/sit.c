@@ -73,6 +73,20 @@ dosit()
 	    if (obj->otyp == CREAM_PIE) {
 		pline("Yecch!");
 		delobj(obj);
+	    } else if (obj->otyp == EGG) {
+		int mnum = obj->corpsenm;
+		boolean righttype = (youmonst.data == &mons[mnum]);
+		boolean yours = obj->spe;
+		if (mnum == NON_PM && yours) {
+		    /* your egg is dead */
+		    You_feel("sad for a moment.");
+		} else if (righttype && flags.female) {
+		    if (!yours)
+			You_feel("somehow out of place...");
+		    /* else no special message */
+		    incubate_egg(obj);
+		} else
+		    pline("It's not very comfortable...");
 	    } else if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
 		pline("It's not very comfortable...");
 

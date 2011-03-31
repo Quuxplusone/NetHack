@@ -400,6 +400,20 @@ struct obj *egg;
 	    }
 }
 
+/* speed up an egg's hatching by moving its timer forward */
+void
+incubate_egg(egg)
+struct obj *egg;
+{
+    int oldtime, newtime;
+    oldtime = stop_timer(HATCH_EGG, (genericptr_t) egg);
+    if (oldtime == 0) impossible("incubate_egg");
+    if (oldtime > 20) newtime = oldtime - rnd(20);
+    else newtime = oldtime;
+    (void) start_timer((long)newtime, TIMER_OBJECT,
+		       HATCH_EGG, (genericptr_t)egg);
+}
+
 /* prevent an egg from ever hatching */
 void
 kill_egg(egg)
