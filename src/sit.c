@@ -70,7 +70,10 @@ dosit()
 
 	    obj = level.objects[u.ux][u.uy];
 	    You("sit on %s.", the(xname(obj)));
-	    if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
+	    if (obj->otyp == CREAM_PIE) {
+		pline("Yecch!");
+		delobj(obj);
+	    } else if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
 		pline("It's not very comfortable...");
 
 	} else if (trap || (u.utrap && (u.utraptype >= TT_LAVA))) {
