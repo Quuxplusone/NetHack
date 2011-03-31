@@ -863,6 +863,7 @@ E int FDECL(pick_lock, (struct obj *));
 E int NDECL(doforce);
 E boolean FDECL(boxlock, (struct obj *,struct obj *));
 E boolean FDECL(doorlock, (struct obj *,int,int));
+E void FDECL(chest_shatter_msg, (struct obj *));
 E int NDECL(doopen);
 E int NDECL(doclose);
 

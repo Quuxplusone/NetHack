@@ -243,6 +243,7 @@ NEARDATA extern coord bhitpos;	/* place where throw or zap hits or stops */
 #define LUNG 16
 #define NOSE 17
 #define STOMACH 18
+#define RUMP 19
 
 /* Flags to control menus */
 #define MENUTYPELEN sizeof("traditional ")

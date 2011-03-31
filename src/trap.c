@@ -3625,7 +3625,11 @@ boolean disarm;
 		case  7:  msg = "flame fizzles out";  break;
 		case  6:
 		case  5:
-		case  4:  msg = "poisoned needle misses";  break;
+		case  4:  if (bodypart != RUMP) {
+		          	/* If you sit on a needle, it doesn't miss.
+		        	   Fall through to next case. */
+		          	msg = "poisoned needle misses";  break;
+		          }
 		case  3:
 		case  2:
 		case  1:
