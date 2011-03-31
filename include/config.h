@@ -248,6 +248,8 @@
  *
  */
 
+#define COMPRESS "/bin/gzip"
+#define COMPRESS_EXTENSION ".gz"
 #if defined(UNIX) && !defined(ZLIB_COMP) && !defined(COMPRESS)
 /* path and file name extension for compression program */
 #define COMPRESS "/usr/bin/compress" /* Lempel-Ziv compression */
@@ -298,7 +300,7 @@
  *      a tar-like file, thus making a neater installation.  See *conf.h
  *      for detailed configuration.
  */
-/* #define DLB */ /* not supported on all platforms */
+#define DLB /* not supported on all platforms */
 
 /*
  *      Defining INSURANCE slows down level changes, but allows games that
