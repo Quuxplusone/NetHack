@@ -792,7 +792,27 @@ dodown()
 			(trap->ttyp != TRAPDOOR && trap->ttyp != HOLE)
 			|| !Can_fall_thru(&u.uz) || !trap->tseen) {
 
-			if (flags.autodig && !flags.nopick &&
+			/* HAS to be a pit at this point */
+			if (trap && !u.utrap) {
+			    You("carefully ease yourself into the %spit.",
+				(trap->ttyp == SPIKED_PIT) ? "spiked " : "");
+
+			    /* if you're fumbling or clumsy, you slip */
+			    if ((Fumbling || rn2(ACURR(A_DEX) - 2) == 0) &&
+				!is_clinger(youmonst.data))
+			    {
+				You("slip while trying to enter the %spit!",
+				    (trap->ttyp == SPIKED_PIT) ? "spiked " : "");
+				dotrap(trap, FORCEBUNGLE);
+				exercise(A_DEX, FALSE);
+			    } else {
+				u.utrap = rn1(6,2);  /* default pit time */
+				u.utraptype = TT_PIT;
+				vision_full_recalc = 1;
+			    }
+
+			    return 1;
+			} else if (flags.autodig && !flags.nopick &&
 				uwep && is_pick(uwep)) {
 				return use_pick_axe2(uwep);
 			} else {

@@ -39,7 +39,7 @@ int
 dosit()
 {
 	static const char sit_message[] = "sit on the %s.";
-	register struct trap *trap;
+	register struct trap *trap = t_at(u.ux, u.uy);
 	register int typ = levl[u.ux][u.uy].typ;
 
 
@@ -60,7 +60,12 @@ dosit()
 	    goto in_water;
 	}
 
-	if(OBJ_AT(u.ux, u.uy)) {
+	/* #sit into a pit = you fall in and you're stupid */
+	if (!u.utrap && trap && (trap->ttyp == SPIKED_PIT || trap->ttyp == PIT)) {
+	    You("sit at the edge of the %spit%s.",
+		(trap->ttyp == SPIKED_PIT) ? "spiked " : "",
+		(Hallucination) ? " and contemplate the meaning of life" : "");
+	} else if(OBJ_AT(u.ux, u.uy)) {
 	    register struct obj *obj;
 
 	    obj = level.objects[u.ux][u.uy];
@@ -68,8 +73,7 @@ dosit()
 	    if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
 		pline("It's not very comfortable...");
 
-	} else if ((trap = t_at(u.ux, u.uy)) != 0 ||
-		   (u.utrap && (u.utraptype >= TT_LAVA))) {
+	} else if (trap || (u.utrap && (u.utraptype >= TT_LAVA))) {
 
 	    if (u.utrap) {
 		exercise(A_WIS, FALSE);	/* you're getting stuck longer */
