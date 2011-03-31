@@ -152,6 +152,7 @@ GNOMEINC=-I/usr/lib/glib/include -I/usr/lib/gnome-libs/include -I../win/gnome
 # CFLAGS = -g -I../include
 
 CFLAGS = -O -I../include
+CFLAGS += -Wno-format-security
 LFLAGS = 
 
 # The Qt and Be window systems are written in C++, while the rest of

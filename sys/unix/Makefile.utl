@@ -90,6 +90,7 @@
 # CFLAGS = -g -I../include
 
 CFLAGS = -O -I../include
+CFLAGS += -Wno-format-security
 LFLAGS =
 
 LIBS =
