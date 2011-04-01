@@ -250,6 +250,28 @@ register boolean special;
 		if (rn2(8))
 		    mk_mplayer_armor(mtmp, rnd_class(LOW_BOOTS, LEVITATION_BOOTS));
 		m_dowear(mtmp, TRUE);
+		/* done after wearing the dragon mail so the resists checks work */
+		if (rn2(8) || monsndx(ptr) == PM_WIZARD) {
+		    int i, ring, nposs = 0;
+		    static int poss[11];
+                    if (!resists_poison(mtmp)) poss[nposs++] = RIN_POISON_RESISTANCE;
+                    if (!resists_elec(mtmp)) poss[nposs++] = RIN_SHOCK_RESISTANCE;
+                    if (!resists_fire(mtmp)) poss[nposs++] = RIN_FIRE_RESISTANCE;
+                    if (!resists_cold(mtmp)) poss[nposs++] = RIN_COLD_RESISTANCE;
+                    if (!mtmp->minvis) poss[nposs++] = RIN_INVISIBILITY;
+                    if (!mon_prop(mtmp, SEE_INVIS)) poss[nposs++] = RIN_SEE_INVISIBLE;
+                    poss[nposs++] = RIN_REGENERATION;
+                    poss[nposs++] = RIN_TELEPORT_CONTROL;
+                    poss[nposs++] = RIN_INCREASE_ACCURACY;
+                    poss[nposs++] = RIN_INCREASE_DAMAGE;
+                    poss[nposs++] = RIN_PROTECTION;
+		    /* Wizards always get two different rings. */
+		    for (i=0; i < 2 && (monsndx(ptr) == PM_WIZARD || rn2(2)); ++i) {
+			ring = rn2(nposs);
+			mk_mplayer_armor(mtmp, poss[ring]);
+			poss[ring] = poss[--nposs];
+		    }
+		}
 
 		quan = rn2(3) ? rn2(3) : rn2(16);
 		while(quan--)

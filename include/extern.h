@@ -54,6 +54,7 @@ E int FDECL(unfixable_trouble_count,(BOOLEAN_P));
 E void NDECL(init_artifacts);
 E void FDECL(save_artifacts, (int));
 E void FDECL(restore_artifacts, (int));
+E unsigned long FDECL(arti_prop_spfx, (int));
 E const char *FDECL(artiname, (int));
 E struct obj *FDECL(mk_artifact, (struct obj *,ALIGNTYP_P));
 E const char *FDECL(artifact_name, (const char *,short *));
@@ -1166,6 +1167,7 @@ E boolean FDECL(ranged_attk, (struct permonst *));
 E boolean FDECL(hates_silver, (struct permonst *));
 E boolean FDECL(passes_bars, (struct permonst *));
 E boolean FDECL(can_track, (struct permonst *));
+E boolean FDECL(mon_prop, (struct monst *,int));
 E boolean FDECL(breakarm, (struct permonst *));
 E boolean FDECL(sliparm, (struct permonst *));
 E boolean FDECL(sticks, (struct permonst *));
@@ -1943,6 +1945,7 @@ E void FDECL(level_tele_trap, (struct trap *));
 E void FDECL(rloc_to, (struct monst *,int,int));
 E boolean FDECL(rloc, (struct monst *, BOOLEAN_P));
 E boolean FDECL(tele_restrict, (struct monst *));
+E boolean FDECL(controls_teleport, (struct monst *));
 E void FDECL(mtele_trap, (struct monst *, struct trap *,int));
 E int FDECL(mlevel_tele_trap, (struct monst *, struct trap *,BOOLEAN_P,int));
 E void FDECL(rloco, (struct obj *));
@@ -2257,6 +2260,7 @@ E void FDECL(you_unwere, (BOOLEAN_P));
 
 /* ### wield.c ### */
 
+E boolean FDECL(will_weld, (struct obj *));
 E void FDECL(setuwep, (struct obj *));
 E void FDECL(setuqwep, (struct obj *));
 E void FDECL(setuswapwep, (struct obj *));
@@ -2327,6 +2331,7 @@ E void FDECL(update_mon_intrinsics,
 		(struct monst *,struct obj *,BOOLEAN_P,BOOLEAN_P));
 E int FDECL(find_mac, (struct monst *));
 E void FDECL(m_dowear, (struct monst *,BOOLEAN_P));
+E long FDECL(mfindringslot, (struct monst *, struct obj **));
 E struct obj *FDECL(which_armor, (struct monst *,long));
 E void FDECL(mon_break_armor, (struct monst *,BOOLEAN_P));
 E void FDECL(bypass_obj, (struct obj *));

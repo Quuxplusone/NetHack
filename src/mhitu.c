@@ -163,7 +163,7 @@ wildmiss(mtmp, mattk)		/* monster attacked your displaced image */
 	compat = (mattk->adtyp == AD_SEDU || mattk->adtyp == AD_SSEX) &&
 		 could_seduce(mtmp, &youmonst, (struct attack *)0);
 
-	if (!mtmp->mcansee || (Invis && !perceives(mtmp->data))) {
+	if (!mtmp->mcansee || (Invis && !mon_prop(mtmp,SEE_INVIS))) {
 	    const char *swings =
 		mattk->aatyp == AT_BITE ? "snaps" :
 		mattk->aatyp == AT_KICK ? "kicks" :
@@ -463,10 +463,19 @@ mattacku(mtmp)
 	tmp = AC_VALUE(u.uac) + 10;		/* tmp ~= 0 - 20 */
 	tmp += mtmp->m_lev;
 	if(multi < 0) tmp += 4;
-	if((Invis && !perceives(mdat)) || !mtmp->mcansee)
+	if((Invis && !mon_prop(mtmp,SEE_INVIS)) || !mtmp->mcansee)
 		tmp -= 2;
 	if(mtmp->mtrapped) tmp -= 2;
 	if(tmp <= 0) tmp = 1;
+
+	/* find rings of increase accuracy */
+	{
+	    struct obj *o;
+	    for (o = mtmp->minvent; o; o = o->nobj)
+		if (o->owornmask && o->otyp == RIN_INCREASE_ACCURACY)
+	            tmp += o->spe;
+	}
+
 
 	/* make eels visible the moment they hit/miss us */
 	if(mdat->mlet == S_EEL && mtmp->minvis && cansee(mtmp->mx,mtmp->my)) {
@@ -906,6 +915,13 @@ hitmu(mtmp, mattk)
 	dmg = d((int)mattk->damn, (int)mattk->damd);
 	if(is_undead(mdat) && midnight())
 		dmg += d((int)mattk->damn, (int)mattk->damd); /* extra damage */
+	/* find rings of increase damage */
+	{
+	    struct obj *o;
+	    for (o = mtmp->minvent; o; o = o->nobj)
+	        if (o->owornmask && o->otyp == RIN_INCREASE_DAMAGE)
+	            dmg += o->spe;
+	}
 
 /*	Next a cancellation factor	*/
 /*	Use uncancelled when the cancellation factor takes into account certain
@@ -1693,7 +1709,7 @@ gulpmu(mtmp, mattk)	/* monster swallows you, or damage if u.uswallow */
 	}
 
 	if (mtmp != u.ustuck) return(0);
-	if (u.uswldtim > 0) u.uswldtim -= 1;
+	if (u.uswldtim > 0) u.uswldtim -= 1; /* what about slow digestion? */
 
 	switch(mattk->adtyp) {
 
@@ -2125,7 +2141,7 @@ struct attack *mattk;
 		defperc = (See_invisible != 0);
 		gendef = poly_gender();
 	} else {
-		defperc = perceives(mdef->data);
+		defperc = mon_prop(mdef,SEE_INVIS);
 		gendef = gender(mdef);
 	}
 
@@ -2160,7 +2176,9 @@ doseduce(mon)
 register struct monst *mon;
 {
 	register struct obj *ring, *nring;
+        struct obj *oldring;
 	boolean fem = (mon->data == &mons[PM_SUCCUBUS]); /* otherwise incubus */
+	long canputon = fem ? mfindringslot(mon, &oldring) : TRUE;
 	char qbuf[QBUFSZ];
 
 	if (mon->mcan || mon->mspec_used) {
@@ -2179,68 +2197,82 @@ register struct monst *mon;
 	if (Blind) pline("It caresses you...");
 	else You_feel("very attracted to %s.", mon_nam(mon));
 
-	for(ring = invent; ring; ring = nring) {
-	    nring = ring->nobj;
-	    if (ring->otyp != RIN_ADORNMENT) continue;
-	    if (fem) {
-		if (rn2(20) < ACURR(A_CHA)) {
-		    Sprintf(qbuf, "\"That %s looks pretty.  May I have it?\"",
-			safe_qbuf("",sizeof("\"That  looks pretty.  May I have it?\""),
-			xname(ring), simple_typename(ring->otyp), "ring"));
-		    makeknown(RIN_ADORNMENT);
-		    if (yn(qbuf) == 'n') continue;
-		} else pline("%s decides she'd like your %s, and takes it.",
-			Blind ? "She" : Monnam(mon), xname(ring));
-		makeknown(RIN_ADORNMENT);
-		if (ring==uleft || ring==uright) Ring_gone(ring);
-		if (ring==uwep) setuwep((struct obj *)0);
-		if (ring==uswapwep) setuswapwep((struct obj *)0);
-		if (ring==uquiver) setuqwep((struct obj *)0);
-		freeinv(ring);
-		(void) mpickobj(mon,ring);
-	    } else {
-		char buf[BUFSZ];
-
-		if (uleft && uright && uleft->otyp == RIN_ADORNMENT
-				&& uright->otyp==RIN_ADORNMENT)
-			break;
-		if (ring==uleft || ring==uright) continue;
-		if (rn2(20) < ACURR(A_CHA)) {
-		    Sprintf(qbuf,"\"That %s looks pretty.  Would you wear it for me?\"",
-			safe_qbuf("",
-			    sizeof("\"That  looks pretty.  Would you wear it for me?\""),
+	/* Succubi only steal rings they actually want to put on. */
+	if (canputon) {
+	    for (ring = invent; ring; ring = nring) {
+		nring = ring->nobj;
+		if (ring->otyp != RIN_ADORNMENT || ring->spe < 0) continue;
+		if (fem && canputon) {
+		    if (oldring && oldring->otyp == RIN_ADORNMENT && ring->spe < oldring->spe)
+			continue;
+		    if (rn2(20) < ACURR(A_CHA)) {
+			Sprintf(qbuf, "\"That %s looks pretty.  May I have it?\"",
+			    safe_qbuf("",sizeof("\"That  looks pretty.  May I have it?\""),
 			    xname(ring), simple_typename(ring->otyp), "ring"));
+			makeknown(RIN_ADORNMENT);
+			if (yn(qbuf) == 'n') continue;
+		    } else pline("%s decides she'd like your %s, and takes it.",
+			    Blind ? "She" : Monnam(mon), xname(ring));
 		    makeknown(RIN_ADORNMENT);
-		    if (yn(qbuf) == 'n') continue;
+		    if (ring==uleft || ring==uright) Ring_gone(ring);
+		    if (ring==uwep) setuwep((struct obj *)0);
+		    if (ring==uswapwep) setuswapwep((struct obj *)0);
+		    if (ring==uquiver) setuqwep((struct obj *)0);
+		    freeinv(ring);
+		    (void) mpickobj(mon,ring);
+		    if (oldring) {
+			oldring->owornmask = 0L;
+			update_mon_intrinsics(mon, oldring, FALSE, FALSE);
+		    }
+		    mon->misc_worn_check |= canputon;
+		    ring->owornmask |= canputon;
+		    update_mon_intrinsics(mon, ring, TRUE, FALSE);
+		    canputon = mfindringslot(mon, &oldring);
+		    if (!canputon) break;
 		} else {
-		    pline("%s decides you'd look prettier wearing your %s,",
-			Blind ? "He" : Monnam(mon), xname(ring));
-		    pline("and puts it on your finger.");
+		    char buf[BUFSZ];
+
+		    if (uleft && uright && uleft->otyp == RIN_ADORNMENT
+				    && uright->otyp==RIN_ADORNMENT)
+			    break;
+		    if (ring==uleft || ring==uright) continue;
+		    if (rn2(20) < ACURR(A_CHA)) {
+			Sprintf(qbuf,"\"That %s looks pretty.  Would you wear it for me?\"",
+			    safe_qbuf("",
+				sizeof("\"That  looks pretty.  Would you wear it for me?\""),
+				xname(ring), simple_typename(ring->otyp), "ring"));
+		 	makeknown(RIN_ADORNMENT);
+			if (yn(qbuf) == 'n') continue;
+		    } else {
+			pline("%s decides you'd look prettier wearing your %s,",
+			    Blind ? "He" : Monnam(mon), xname(ring));
+			pline("and puts it on your finger.");
+		    }
+		    makeknown(RIN_ADORNMENT);
+		    if (!uright) {
+			pline("%s puts %s on your right %s.",
+			    Blind ? "He" : Monnam(mon), the(xname(ring)), body_part(HAND));
+			setworn(ring, RIGHT_RING);
+		    } else if (!uleft) {
+			pline("%s puts %s on your left %s.",
+			    Blind ? "He" : Monnam(mon), the(xname(ring)), body_part(HAND));
+			setworn(ring, LEFT_RING);
+		    } else if (uright && uright->otyp != RIN_ADORNMENT) {
+			Strcpy(buf, xname(uright));
+			pline("%s replaces your %s with your %s.",
+			Blind ? "He" : Monnam(mon), buf, xname(ring));
+			Ring_gone(uright);
+			setworn(ring, RIGHT_RING);
+		    } else if (uleft && uleft->otyp != RIN_ADORNMENT) {
+			Strcpy(buf, xname(uleft));
+			pline("%s replaces your %s with your %s.",
+			    Blind ? "He" : Monnam(mon), buf, xname(ring));
+			Ring_gone(uleft);
+			setworn(ring, LEFT_RING);
+		    } else impossible("ring replacement");
+		    Ring_on(ring);
+		    prinv((char *)0, ring, 0L);
 		}
-		makeknown(RIN_ADORNMENT);
-		if (!uright) {
-		    pline("%s puts %s on your right %s.",
-			Blind ? "He" : Monnam(mon), the(xname(ring)), body_part(HAND));
-		    setworn(ring, RIGHT_RING);
-		} else if (!uleft) {
-		    pline("%s puts %s on your left %s.",
-			Blind ? "He" : Monnam(mon), the(xname(ring)), body_part(HAND));
-		    setworn(ring, LEFT_RING);
-		} else if (uright && uright->otyp != RIN_ADORNMENT) {
-		    Strcpy(buf, xname(uright));
-		    pline("%s replaces your %s with your %s.",
-			Blind ? "He" : Monnam(mon), buf, xname(ring));
-		    Ring_gone(uright);
-		    setworn(ring, RIGHT_RING);
-		} else if (uleft && uleft->otyp != RIN_ADORNMENT) {
-		    Strcpy(buf, xname(uleft));
-		    pline("%s replaces your %s with your %s.",
-			Blind ? "He" : Monnam(mon), buf, xname(ring));
-		    Ring_gone(uleft);
-		    setworn(ring, LEFT_RING);
-		} else impossible("ring replacement");
-		Ring_on(ring);
-		prinv((char *)0, ring, 0L);
 	    }
 	}
 
@@ -2527,7 +2559,7 @@ register struct attack *mattk;
 		if (u.umonnum == PM_FLOATING_EYE) {
 		    if (!rn2(4)) tmp = 127;
 		    if (mtmp->mcansee && haseyes(mtmp->data) && rn2(3) &&
-				(perceives(mtmp->data) || !Invis)) {
+				(mon_prop(mtmp,SEE_INVIS) || !Invis)) {
 			if (Blind)
 			    pline("As a blind %s, you cannot defend yourself.",
 							youmonst.data->mname);

@@ -457,8 +457,23 @@ register struct monst *mtmp;
 	 */
 	if (!is_clinger(mtmp->data)
 	    && !is_swimmer(mtmp->data) && !amphibious(mtmp->data)) {
-	    if (cansee(mtmp->mx,mtmp->my)) {
-		    pline("%s drowns.", Monnam(mtmp));
+	    boolean canseem = cansee(mtmp->mx, mtmp->my);
+	    if (!level.flags.noteleport &&
+		mon_prop(mtmp, TELEPORT) && !mtmp->msleeping &&
+		(rn2(2) || mon_prop(mtmp, TELEPORT_CONTROL))) {
+		/* The monster made its saving throw and teleported away! */
+		if (u.uswallow && mtmp == u.ustuck) {
+		    You("are no longer inside %s!", mon_nam(mtmp));
+		}
+		else if (canseem)
+		    pline("%s suddenly vanishes!", Monnam(mtmp));
+		unstuck(mtmp);
+		(void) rloc(mtmp, FALSE);
+		water_damage(mtmp->minvent, FALSE, FALSE);
+		return 0;
+	    }
+	    if (canseem) {
+		pline("%s drowns.", Monnam(mtmp));
 	    }
 	    if (u.ustuck && u.uswallow && u.ustuck == mtmp) {
 	    /* This can happen after a purple worm plucks you off a
@@ -887,7 +902,7 @@ mpickstuff(mtmp, str)
 		if (!can_carry(mtmp,otmp)) continue;
 		if (is_pool(mtmp->mx,mtmp->my)) continue;
 #ifdef INVISIBLE_OBJECTS
-		if (otmp->oinvis && !perceives(mtmp->data)) continue;
+		if (otmp->oinvis && !mon_prop(mtmp,SEE_INVIS)) continue;
 #endif
 		if (cansee(mtmp->mx,mtmp->my) && flags.verbose)
 			pline("%s picks up %s.", Monnam(mtmp),
@@ -1080,7 +1095,7 @@ nexttry:	/* eels prefer the water, but if there is no water nearby,
 	    if((is_pool(nx,ny) == wantpool || poolok) &&
 	       (lavaok || !is_lava(nx,ny))) {
 		int dispx, dispy;
-		boolean monseeu = (mon->mcansee && (!Invis || perceives(mdat)));
+		boolean monseeu = (mon->mcansee && (!Invis || mon_prop(mon,SEE_INVIS)));
 		boolean checkobj = OBJ_AT(nx,ny);
 
 		/* Displacement also displaces the Elbereth/scare monster,

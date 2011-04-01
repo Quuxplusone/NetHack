@@ -175,12 +175,14 @@ fightm(mtmp)		/* have monsters fight each other */
  *
  * This function returns a result bitfield:
  *
- *	    --------- aggressor died
- *	   /  ------- defender died
- *	  /  /  ----- defender was hit
- *	 /  /  /
- *	x  x  x
+ *           ----------- defender was "hurriedly expelled"
+ *	    /  --------- aggressor died
+ *	   /  /  ------- defender died
+ *	  /  /  /  ----- defender was hit
+ *	 /  /  /  /
+ *	x  x  x  x
  *
+ *      0x8     MM_EXPELLED
  *	0x4	MM_AGR_DIED
  *	0x2	MM_DEF_DIED
  *	0x1	MM_HIT
@@ -218,6 +220,13 @@ mattackm(magr, mdef)
     if (mdef->mconf || !mdef->mcanmove || mdef->msleeping) {
 	tmp += 4;
 	mdef->msleeping = 0;
+    }
+    /* find rings of increase accuracy */
+    {
+	struct obj *o;
+	for (o = magr->minvent; o; o = o->nobj)
+	    if (o->owornmask && o->otyp == RIN_INCREASE_ACCURACY)
+	        tmp += o->spe;
     }
 
     /* undetect monsters become un-hidden if they are attacked */
@@ -448,7 +457,7 @@ gazemm(magr, mdef, mattk)
 	}
 
 	if (magr->mcan || !magr->mcansee ||
-	    (magr->minvis && !perceives(mdef->data)) ||
+	    (magr->minvis && !mon_prop(mdef,SEE_INVIS)) ||
 	    !mdef->mcansee || mdef->msleeping) {
 	    if(vis) pline("but nothing happens.");
 	    return(MM_MISS);
@@ -465,7 +474,7 @@ gazemm(magr, mdef, mattk)
 					"The gaze is reflected away by %s %s.");
 		    return (MM_MISS);
 		}
-		if (mdef->minvis && !perceives(magr->data)) {
+		if (mdef->minvis && !mon_prop(magr, SEE_INVIS)) {
 		    if (canseemon(magr)) {
 			pline("%s doesn't seem to notice that %s gaze was reflected.",
 			      Monnam(magr), mhis(magr));
@@ -540,8 +549,15 @@ gulpmm(magr, mdef, mattk)
 	    newsym(dx, dy);
 	}
 	else {					/* both alive, put them back */
-	    if (cansee(dx, dy))
+	    if (cansee(dx, dy)) {
+                if (status & MM_EXPELLED) {
+                    strcpy(buf, Monnam(magr));
+		    pline("%s hurriedly regurgitates %s!", buf, mon_nam(mdef));
+                    pline("Obviously, it didn't like %s taste.", s_suffix(mon_nam(mdef)));
+                } else {
 		pline("%s is regurgitated!", Monnam(mdef));
+                }
+            }
 
 	    place_monster(magr, ax, ay);
 	    place_monster(mdef, dx, dy);
@@ -615,6 +631,13 @@ mdamagem(magr, mdef, mattk)
 		return MM_AGR_DIED;
 	    }
 	}
+	/* find rings of increase damage */
+	if (magr->minvent) {
+	    struct obj *o;
+	    for (o = magr->minvent; o; o = o->nobj)
+	        if (o->owornmask && o->otyp == RIN_INCREASE_DAMAGE)
+	            tmp += o->spe;
+	}
 
 	/* cancellation factor is the same as when attacking the hero */
 	armpro = magic_negation(mdef);
@@ -622,6 +645,8 @@ mdamagem(magr, mdef, mattk)
 
 	switch(mattk->adtyp) {
 	    case AD_DGST:
+                if (mon_prop(mdef,SLOW_DIGESTION))
+                    return (MM_HIT | MM_EXPELLED);
 		/* eating a Rider or its corpse is fatal */
 		if (is_rider(mdef->data)) {
 		    if (vis)
@@ -922,7 +947,8 @@ mdamagem(magr, mdef, mattk)
 		tmp = 0;
 		break;
 	    case AD_HALU:
-		if (!magr->mcan && haseyes(pd) && mdef->mcansee) {
+		if (!magr->mcan && haseyes(pd) && mdef->mcansee
+			&& !mon_prop(mdef,HALLUC_RES)) {
 		    if (vis) pline("%s looks %sconfused.",
 				    Monnam(mdef), mdef->mconf ? "more " : "");
 		    mdef->mconf = 1;
@@ -1326,7 +1352,7 @@ int mdead;
 		if (mddat == &mons[PM_FLOATING_EYE]) {
 		    if (!rn2(4)) tmp = 127;
 		    if (magr->mcansee && haseyes(madat) && mdef->mcansee &&
-			(perceives(madat) || !mdef->minvis)) {
+			(!mdef->minvis || mon_prop(magr, SEE_INVIS))) {
 			Sprintf(buf, "%s gaze is reflected by %%s %%s.",
 				s_suffix(mon_nam(mdef)));
 			if (mon_reflects(magr,
