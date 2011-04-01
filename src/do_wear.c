@@ -451,7 +451,7 @@ Gloves_off()
 	    corpse_xname(uwep, TRUE), makeplural(body_part(HAND)));
 	Strcpy(kbuf, an(corpse_xname(uwep, TRUE)));
 	instapetrify(kbuf);
-	uwepgone();  /* life-saved still doesn't allow touching cockatrice */
+	if (!Stone_resistance) uwepgone();  /* life-saved still doesn't allow touching cockatrice */
     }
 
     /* KMH -- ...or your secondary weapon when you're wielding it */
@@ -464,7 +464,7 @@ Gloves_off()
 
 	Strcpy(kbuf, an(corpse_xname(uswapwep, TRUE)));
 	instapetrify(kbuf);
-	uswapwepgone();	/* lifesaved still doesn't allow touching cockatrice */
+	if (!Stone_resistance) uswapwepgone();	/* lifesaved still doesn't allow touching cockatrice */
     }
 
     return 0;

@@ -139,6 +139,7 @@ struct obj *wep;
 		mons[wep->corpsenm].mname, makeplural(body_part(HAND)));
 	    Sprintf(kbuf, "%s corpse", an(mons[wep->corpsenm].mname));
 	    instapetrify(kbuf);
+	    if (Stone_resistance) goto wield_it_anyway;
 	} else if (uarms && bimanual(wep))
 	    You("cannot wield a two-handed %s while wearing a shield.",
 		is_sword(wep) ? "sword" :
@@ -147,6 +148,7 @@ struct obj *wep;
 	    res++;	/* takes a turn even though it doesn't get wielded */
 	} else {
 	    /* Weapon WILL be wielded after this point */
+	  wield_it_anyway:
 	    res++;
 	    if (will_weld(wep)) {
 		const char *tmp = xname(wep), *thestr = "The ";
