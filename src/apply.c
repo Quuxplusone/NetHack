@@ -722,14 +722,14 @@ struct obj *obj;
 		(void) mpickobj(mtmp,obj);
 		if (!tele_restrict(mtmp)) (void) rloc(mtmp, FALSE);
 	} else if (!is_unicorn(mtmp->data) && !humanoid(mtmp->data) &&
-			(!mtmp->minvis || perceives(mtmp->data)) && rn2(5)) {
+			(!mtmp->minvis || mon_prop(mtmp,SEE_INVIS)) && rn2(5)) {
 		if (vis)
 		    pline("%s is frightened by its reflection.", Monnam(mtmp));
 		monflee(mtmp, d(2,4), FALSE, FALSE);
 	} else if (!Blind) {
 		if (mtmp->minvis && !See_invisible)
 		    ;
-		else if ((mtmp->minvis && !perceives(mtmp->data))
+		else if ((mtmp->minvis && !mon_prop(mtmp,SEE_INVIS))
 			 || !haseyes(mtmp->data))
 		    pline("%s doesn't seem to notice its reflection.",
 			Monnam(mtmp));
@@ -2261,7 +2261,7 @@ struct obj *obj;
 
 	    You("wrap your bullwhip around %s %s.",
 		s_suffix(mon_nam(mtmp)), onambuf);
-	    if (gotit && otmp->cursed) {
+	    if (gotit && will_weld(otmp)) {
 		pline("%s welded to %s %s%c",
 		      (otmp->quan == 1L) ? "It is" : "They are",
 		      mhis(mtmp), mon_hand,

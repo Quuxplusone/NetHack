@@ -470,7 +470,7 @@ long nmv;		/* number of moves */
 	}
 
 	/* recover lost hit points */
-	if (!regenerates(mtmp->data)) imv /= 20;
+	if (!mon_prop(mtmp,REGENERATION)) imv /= 20;
 	if (mtmp->mhp + imv >= mtmp->mhpmax)
 	    mtmp->mhp = mtmp->mhpmax;
 	else mtmp->mhp += imv;

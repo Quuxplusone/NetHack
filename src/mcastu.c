@@ -54,7 +54,7 @@ boolean undirected;
 
 	    if (undirected)
 		point_msg = "all around, then curses";
-	    else if ((Invis && !perceives(mtmp->data) &&
+	    else if ((Invis && !mon_prop(mtmp,SEE_INVIS) &&
 			(mtmp->mux != u.ux || mtmp->muy != u.uy)) ||
 		    (youmonst.m_ap_type == M_AP_OBJECT &&
 			youmonst.mappearance == STRANGE_OBJECT) ||
@@ -238,7 +238,7 @@ castmu(mtmp, mattk, thinks_it_foundyou, foundyou)
 	    pline("%s casts a spell%s!",
 		  canspotmon(mtmp) ? Monnam(mtmp) : "Something",
 		  is_undirected_spell(mattk->adtyp, spellnum) ? "" :
-		  (Invisible && !perceives(mtmp->data) && 
+		  (Invisible && !mon_prop(mtmp,SEE_INVIS) && 
 		   (mtmp->mux != u.ux || mtmp->muy != u.uy)) ?
 		  " at a spot near you" :
 		  (Displaced && (mtmp->mux != u.ux || mtmp->muy != u.uy)) ?
@@ -368,7 +368,7 @@ int spellnum;
 
 	    /* messages not quite right if plural monsters created but
 	       only a single monster is seen */
-	    if (Invisible && !perceives(mtmp->data) &&
+	    if (Invisible && !mon_prop(mtmp,SEE_INVIS) &&
 				    (mtmp->mux != u.ux || mtmp->muy != u.uy))
 		pline("%s around a spot near you!", mappear);
 	    else if (Displaced && (mtmp->mux != u.ux || mtmp->muy != u.uy))
@@ -570,7 +570,7 @@ int spellnum;
 	else if (let == S_SNAKE)
 	    pline("%s transforms a clump of sticks into snakes!",
 		Monnam(mtmp));
-	else if (Invisible && !perceives(mtmp->data) &&
+	else if (Invisible && !mon_prop(mtmp,SEE_INVIS) &&
 				(mtmp->mux != u.ux || mtmp->muy != u.uy))
 	    pline("%s summons insects around a spot near you!",
 		Monnam(mtmp));

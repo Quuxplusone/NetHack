@@ -273,7 +273,7 @@ nothing_to_steal:
 	for(otmp = invent; otmp; otmp = otmp->nobj)
 	    if ((!uarm || otmp != uarmc) && otmp != uskin
 #ifdef INVISIBLE_OBJECTS
-				&& (!otmp->oinvis || perceives(mtmp->data))
+				&& (!otmp->oinvis || mon_prop(mtmp,SEE_INVIS))
 #endif
 				)
 		tmp += ((otmp->owornmask &
@@ -283,7 +283,7 @@ nothing_to_steal:
 	for(otmp = invent; otmp; otmp = otmp->nobj)
 	    if ((!uarm || otmp != uarmc) && otmp != uskin
 #ifdef INVISIBLE_OBJECTS
-				&& (!otmp->oinvis || perceives(mtmp->data))
+				&& (!otmp->oinvis || mon_prop(mtmp,SEE_INVIS))
 #endif
 			)
 		if((tmp -= ((otmp->owornmask &
@@ -314,6 +314,8 @@ gotobj:
 		ostuck = TRUE;	/* effectively worn; curse is implicit */
 	    else if (otmp == uquiver || (otmp == uswapwep && !u.twoweap))
 		ostuck = FALSE;	/* not really worn; curse doesn't matter */
+	    else if (otmp->owornmask == W_WEP)
+		ostuck = will_weld(otmp);
 	    else
 		ostuck = (otmp->cursed && otmp->owornmask);
 
@@ -506,11 +508,11 @@ struct monst *mtmp;
 	if (otmp->owornmask)
 	    remove_worn_item(otmp, TRUE);
 	freeinv(otmp);
-	/* mpickobj wont merge otmp because none of the above things
-	   to steal are mergable */
+	/* mpickobj won't merge otmp because none of the above things
+	   to steal are mergeable */
 	(void) mpickobj(mtmp,otmp);	/* may merge and free otmp */
 	pline("%s stole %s!", Monnam(mtmp), doname(otmp));
-	if (can_teleport(mtmp->data) && !tele_restrict(mtmp))
+	if (mon_prop(mtmp,TELEPORT) && !tele_restrict(mtmp))
 	    (void) rloc(mtmp, FALSE);
     }
 }

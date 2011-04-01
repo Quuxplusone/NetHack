@@ -157,7 +157,7 @@ struct monst *mon;
 
 #ifdef INVISIBLE_OBJECTS
 	/* Invisible weapons against monsters who can't see invisible */
-	if (otmp->oinvis && !perceives(ptr)) tmp += 3;
+	if (otmp->oinvis && !mon_prop(mon,SEE_INVIS)) tmp += 3;
 #endif
 
 	/* Check specially named weapon "to hit" bonuses */
@@ -630,7 +630,7 @@ register struct monst *mon;
 		 * can know it's cursed and needn't even bother trying.
 		 * Still....
 		 */
-		if (mw_tmp && mw_tmp->cursed && mw_tmp->otyp != CORPSE) {
+		if (mw_tmp && will_weld(mw_tmp)) {
 		    if (canseemon(mon)) {
 			char welded_buf[BUFSZ];
 			const char *mon_hand = mbodypart(mon, HAND);
@@ -663,7 +663,7 @@ register struct monst *mon;
 		mon->weapon_check = NEED_WEAPON;
 		if (canseemon(mon)) {
 		    pline("%s wields %s!", Monnam(mon), doname(obj));
-		    if (obj->cursed && obj->otyp != CORPSE) {
+		    if (will_weld(obj)) {
 			pline("%s %s to %s %s!",
 			    Tobjnam(obj, "weld"),
 			    is_plural(obj) ? "themselves" : "itself",

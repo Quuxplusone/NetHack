@@ -4,6 +4,8 @@
 
 #include "hack.h"
 
+extern const int monstr[];
+
 STATIC_DCL void FDECL(m_lose_armor, (struct monst *,struct obj *));
 STATIC_DCL void FDECL(m_dowear_type, (struct monst *,long, BOOLEAN_P, BOOLEAN_P));
 STATIC_DCL int FDECL(extra_pref, (struct monst *, struct obj *));
@@ -333,14 +335,16 @@ register struct monst *mon;
 	long mwflags = mon->misc_worn_check;
 
 	for (obj = mon->minvent; obj; obj = obj->nobj) {
-	    if (obj->owornmask & mwflags)
+	    if (obj->owornmask & mwflags &&
+		  obj->otyp != RIN_INCREASE_DAMAGE &&
+		  obj->otyp != RIN_INCREASE_ACCURACY)
 		base -= ARM_BONUS(obj);
 		/* since ARM_BONUS is positive, subtracting it increases AC */
 	}
 	return base;
 }
 
-/* weapons are handled separately; rings and eyewear aren't used by monsters */
+/* weapons are handled separately; eyewear isn't used by monsters */
 
 /* Wear the best object of each type that the monster has.  During creation,
  * the monster can put everything on at once; otherwise, wearing takes time.
@@ -360,6 +364,8 @@ m_dowear(mon, creation)
 register struct monst *mon;
 boolean creation;
 {
+	struct obj *mw = MON_WEP(mon);
+	long flag;
 #define RACE_EXCEPTION TRUE
 	/* Note the restrictions here are the same as in dowear in do_wear.c
 	 * except for the additional restriction on intelligence.  (Players
@@ -384,8 +390,16 @@ boolean creation;
 	if (!cantweararm(mon->data) || mon->data->msize == MZ_SMALL)
 	    m_dowear_type(mon, W_ARMC, creation, FALSE);
 	m_dowear_type(mon, W_ARMH, creation, FALSE);
-	if (!MON_WEP(mon) || !bimanual(MON_WEP(mon)))
+	if (!mw || !bimanual(mw))
 	    m_dowear_type(mon, W_ARMS, creation, FALSE);
+
+        /* Two rings per monster; ring takes up a "hand" slot */
+        if ((flag = mfindringslot(mon,(struct obj**)0)) != 0L)
+          m_dowear_type(mon, flag, creation, FALSE);
+        if ((flag = mfindringslot(mon,(struct obj**)0)) != 0L)
+        if (flag != 0L)
+          m_dowear_type(mon, flag, creation, FALSE);
+
 	m_dowear_type(mon, W_ARMG, creation, FALSE);
 	if (!slithy(mon->data) && mon->data->mlet != S_CENTAUR)
 	    m_dowear_type(mon, W_ARMF, creation, FALSE);
@@ -393,6 +407,44 @@ boolean creation;
 	    m_dowear_type(mon, W_ARM, creation, FALSE);
 	else
 	    m_dowear_type(mon, W_ARM, creation, RACE_EXCEPTION);
+}
+
+/* Find an available ring slot, if possible.
+   Return the current object in that slot in *objp. */
+long
+mfindringslot(mon, objp)
+struct monst *mon;
+struct obj **objp;
+{
+    struct obj *oleft, *oright;
+    struct obj *mw = which_armor(mon, W_ARMG);
+    long flag; /* best available slot for the ring */
+
+    if (mw && mw->cursed)  /* cursed gloves */
+        return 0L;
+    mw = MON_WEP(mon);
+    if (mw && !will_weld(mw))  /* if it's not welded, we don't care */
+        mw = (struct obj *)0;
+    if (mw && bimanual(mw))
+        return 0L;
+    oleft = which_armor(mon, W_RINGL);
+    oright = which_armor(mon, W_RINGR);
+    if (!oleft) {
+        flag = W_RINGL;
+    } else if (!mw && (!oright || (oleft->cursed && !oright->cursed))) {
+        flag = W_RINGR;
+    } else if (oright->cursed && !oleft->cursed) {
+        flag = W_RINGL;
+    } else if (oright->cursed) { /* both rings cursed */
+	return 0L;
+    } else if (!mw && (extra_pref(mon,oright) >= extra_pref(mon,oleft))) {
+        flag = W_RINGR;
+    } else
+        flag = W_RINGL;
+
+    if (objp)
+        *objp = (flag == W_RINGL ? oleft : oright);
+    return flag;
 }
 
 STATIC_OVL void
@@ -452,6 +504,26 @@ boolean racialexception;
 		    if (!is_suit(obj)) continue;
 		    if (racialexception && (racial_exception(mon, obj) < 1)) continue;
 		    break;
+                case W_RINGL:
+                case W_RINGR:
+                    /* Monsters can put on only the following rings. */
+                    if (obj->oclass != RING_CLASS ||
+			(obj->otyp != RIN_ADORNMENT &&
+			 obj->otyp != RIN_INVISIBILITY &&
+			 obj->otyp != RIN_FIRE_RESISTANCE &&
+			 obj->otyp != RIN_COLD_RESISTANCE &&
+			 obj->otyp != RIN_POISON_RESISTANCE &&
+			 obj->otyp != RIN_SHOCK_RESISTANCE &&
+			 obj->otyp != RIN_REGENERATION &&
+			 obj->otyp != RIN_TELEPORTATION &&
+			 obj->otyp != RIN_TELEPORT_CONTROL &&
+			 obj->otyp != RIN_POLYMORPH &&
+			 obj->otyp != RIN_SLOW_DIGESTION &&
+			 obj->otyp != RIN_INCREASE_DAMAGE &&
+			 obj->otyp != RIN_INCREASE_ACCURACY &&
+			 obj->otyp != RIN_PROTECTION))
+			continue;
+                    break;
 	    }
 	    if (obj->owornmask) continue;
 	    /* I'd like to define a VISIBLE_ARM_BONUS which doesn't assume the
@@ -752,19 +824,94 @@ boolean polyspot;
 	return;
 }
 
-/* bias a monster's preferences towards armor that has special benefits. */
-/* currently only does speed boots, but might be expanded if monsters get to
-   use more armor abilities */
+/*
+ * Bias a monster's preferences towards armor that has special benefits.
+ * Currently does speed boots and various rings.
+ */
 static int
 extra_pref(mon, obj)
 struct monst *mon;
 struct obj *obj;
 {
-    if (obj) {
+	struct obj *old;
+	int rc = 1;
+	long i;
+
+	if (!obj) return 0;
+
 	if (obj->otyp == SPEED_BOOTS && mon->permspeed != MFAST)
 	    return 20;
-    }
-    return 0;
+	if (obj->oclass != RING_CLASS)
+	    return 0;
+
+	/* Find out whether the monster already has some resistance. */
+	old = which_armor(mon, W_RINGL); 
+	if (old) update_mon_intrinsics(mon, old, FALSE, TRUE); 
+	old = which_armor(mon, W_RINGR); 
+	if (old) update_mon_intrinsics(mon, old, FALSE, TRUE); 
+	/* This list should match the list in m_dowear_type. */
+	switch (obj->otyp) {
+	case RIN_ADORNMENT:
+	    if (mon->data == &mons[PM_SUCCUBUS] && obj->spe > 0)
+	        rc = 100 + obj->spe;
+	    break;
+	case RIN_FIRE_RESISTANCE:
+	    if (!resists_fire(mon))
+	        rc = dmgtype(youmonst.data, AD_FIRE)
+			|| (uwep && uwep->oartifact == ART_FIRE_BRAND) ? 20 : 12;
+	    break;
+	case RIN_COLD_RESISTANCE:
+	    if (!resists_cold(mon))
+	        rc = dmgtype(youmonst.data, AD_COLD)
+			|| (uwep && uwep->oartifact == ART_FROST_BRAND) ? 20 : 12;
+	    break;
+	case RIN_POISON_RESISTANCE:
+	    if (!resists_poison(mon))
+	        rc = dmgtype(youmonst.data,AD_DRST)
+		     || dmgtype(youmonst.data,AD_DRCO)
+		     || dmgtype(youmonst.data,AD_DRDX) ? 20 : 10;
+	    break;
+	case RIN_SHOCK_RESISTANCE:
+	    if (!resists_elec(mon))
+		rc = dmgtype(youmonst.data,AD_ELEC)
+			|| (uwep && uwep->oartifact == ART_MJOLLNIR) ? 20 : 10;
+	    break;
+	case RIN_REGENERATION:
+	    rc = !mon_prop(mon,REGENERATION) ? 20 : 0;
+	    break;
+	case RIN_INVISIBILITY:
+	    if (mon->mtame || mon->mpeaceful)
+		rc = See_invisible ? 10 : 0;
+	    else rc = 30;
+	    break;
+	case RIN_INCREASE_DAMAGE:
+	case RIN_INCREASE_ACCURACY:
+	case RIN_PROTECTION:
+            if (obj->spe > 0)
+                rc = 10 + 3*(obj->spe);
+            else rc = 0;
+            break;
+        case RIN_TELEPORTATION:
+	    if (!mon_prop(mon,TELEPORT))
+		rc = (obj->cursed) ? 5 : 15;
+	    break;
+	case RIN_TELEPORT_CONTROL:
+	    if (!mon_prop(mon,TELEPORT_CONTROL))
+		rc = mon_prop(mon,TELEPORT) ? 20 : 5;
+	    break;
+	case RIN_POLYMORPH:
+	    rc = (!mon->cham && monstr[monsndx(mon->data)] < 6) ? 15 : 0;
+	    break;
+	case RIN_SLOW_DIGESTION:
+            if (dmgtype(youmonst.data, AD_DGST))
+		rc = 25;
+	    break;
+	}
+	old = which_armor(mon, W_RINGL); 
+	if (old) update_mon_intrinsics(mon, old, TRUE, TRUE); 
+	old = which_armor(mon, W_RINGR); 
+	if (old) update_mon_intrinsics(mon, old, TRUE, TRUE); 
+	return rc;
 }
 
 /*

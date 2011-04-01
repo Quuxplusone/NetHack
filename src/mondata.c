@@ -270,6 +270,51 @@ can_track(ptr)		/* returns TRUE if monster can track well */
 		return((boolean)haseyes(ptr));
 }
 
+boolean
+mon_prop(mon,prop)
+register struct monst *mon;
+int prop;
+{
+    struct obj *o;
+    int adtyp = 0;
+    /* First, check if prop has a corresponding monflag */
+    switch(prop) {
+	case REGENERATION:
+	    if (regenerates(mon->data)) return TRUE;
+	    break;
+	case SEE_INVIS:
+	    if (perceives(mon->data)) return TRUE;
+	    break;
+	case TELEPORT:
+	    if (can_teleport(mon->data) && !mon->mcan) return TRUE;
+	    break;
+	case TELEPORT_CONTROL:
+	    if (control_teleport(mon->data) || is_covetous(mon->data)) return TRUE;
+	    if (mon->m_lev >= (attacktype(mon->data, AT_MAGC) ? 8 : 12)) return TRUE;
+	    break;
+	case TELEPAT:
+	    if (telepathic(mon->data)) return TRUE;
+	    break;
+	case HALLUC_RES:
+	    adtyp = AD_HALU;
+	    break;
+	case JUMPING:
+	    if (is_unicorn(mon->data)) return TRUE;
+	    break;
+	case ANTIMAGIC: /* just in case */
+	    return (resists_magm(mon));
+    }
+    /* Now check for extrinsics */
+    for (o = mon->minvent; o; o = o->nobj)
+	if ((o->owornmask && objects[o->otyp].oc_oprop == prop) ||
+	    (o->oartifact && ((adtyp && protects(adtyp, o)) ||
+	    (arti_prop_spfx(prop) && spec_ability(o,arti_prop_spfx(prop)))))) {
+		return TRUE;
+	}
+    return FALSE;
+
+}
+
 #endif /* OVL1 */
 #ifdef OVLB
 

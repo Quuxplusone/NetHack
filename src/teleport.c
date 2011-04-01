@@ -1057,6 +1057,17 @@ struct monst *mon;
 	return FALSE;
 }
 
+/* Returns true if a monster wants to teleport to a specific location */
+boolean
+controls_teleport(mtmp)
+struct monst *mtmp;
+{
+	if (!mon_prop(mtmp, TELEPORT_CONTROL)) return FALSE; /* No choice */
+	if (mtmp->mtame) return TRUE; /* Teleport to player */
+	/* Fleeing or peaceful non-pets just want to go anywhere but here */
+	return !(mtmp->mhp < 7 || mtmp->mflee || mtmp->mpeaceful);
+}
+
 void
 mtele_trap(mtmp, trap, in_sight)
 struct monst *mtmp;
@@ -1066,6 +1077,7 @@ int in_sight;
 	char *monname;
 
 	if (tele_restrict(mtmp)) return;
+	if (resists_magm(mtmp)) return; /* same as player */
 	if (teleport_pet(mtmp, FALSE)) {
 	    /* save name with pre-movement visibility */
 	    monname = Monnam(mtmp);
@@ -1075,7 +1087,10 @@ int in_sight;
 	     * the guard isn't going to come for it...
 	     */
 	    if (trap->once) mvault_tele(mtmp);
-	    else (void) rloc(mtmp, FALSE);
+	    else if (!controls_teleport(mtmp))
+		(void) rloc(mtmp, FALSE);
+	    else
+		mnexto(mtmp);
 
 	    if (in_sight) {
 		if (canseemon(mtmp))
@@ -1100,6 +1115,7 @@ int in_sight;
 
 	if (mtmp == u.ustuck)	/* probably a vortex */
 	    return 0;		/* temporary? kludge */
+	if (resists_magm(mtmp)) return 0; /* same as player */
 	if (teleport_pet(mtmp, force_it)) {
 	    d_level tolevel;
 	    int migrate_typ = MIGR_RANDOM;
@@ -1137,7 +1153,10 @@ int in_sight;
 				Monnam(mtmp));
 		    return 0;
 		}
-		nlev = random_teleport_level();
+	        if(!controls_teleport(mtmp))
+		    nlev = random_teleport_level();
+		else
+		    return 0;
 		if (nlev == depth(&u.uz)) {
 		    if (in_sight)
 			pline("%s shudders for a moment.", Monnam(mtmp));
@@ -1280,7 +1299,7 @@ boolean give_feedback;
 		You("are no longer inside %s!", mon_nam(mtmp));
 	    unstuck(mtmp);
 	    (void) rloc(mtmp, FALSE);
-	} else if (is_rider(mtmp->data) && rn2(13) &&
+	} else if (mon_prop(mtmp,TELEPORT_CONTROL) && rn2(13) &&
 		   enexto(&cc, u.ux, u.uy, mtmp->data))
 	    rloc_to(mtmp, cc.x, cc.y);
 	else

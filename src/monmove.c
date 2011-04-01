@@ -155,7 +155,7 @@ struct monst *mon;
 boolean digest_meal;
 {
 	if (mon->mhp < mon->mhpmax &&
-	    (moves % 20 == 0 || regenerates(mon->data))) mon->mhp++;
+	    (moves % 20 == 0 || mon_prop(mon,REGENERATION))) mon->mhp++;
 	if (mon->mspec_used) mon->mspec_used--;
 	if (digest_meal) {
 	    if (mon->meating) mon->meating--;
@@ -255,7 +255,7 @@ int *inrange, *nearby, *scared;
 	 * running into you by accident but possibly attacking the spot
 	 * where it guesses you are.
 	 */
-	if (!mtmp->mcansee || (Invis && !perceives(mtmp->data))) {
+	if (!mtmp->mcansee || (Invis && !mon_prop(mtmp,SEE_INVIS))) {
 		seescaryx = mtmp->mux;
 		seescaryy = mtmp->muy;
 	} else {
@@ -342,8 +342,8 @@ register struct monst *mtmp;
 	if (mtmp->mstun && !rn2(10)) mtmp->mstun = 0;
 
 	/* some monsters teleport */
-	if (mtmp->mflee && !rn2(40) && can_teleport(mdat) && !mtmp->iswiz &&
-	    !level.flags.noteleport) {
+	if (mtmp->mflee && !rn2(40) && mon_prop(mtmp,TELEPORT)
+	    && !mtmp->iswiz && !level.flags.noteleport) {
 		(void) rloc(mtmp, FALSE);
 		return(0);
 	}
@@ -434,7 +434,7 @@ register struct monst *mtmp;
 			if (m2->mpeaceful == mtmp->mpeaceful) continue;
 			if (mindless(m2->data)) continue;
 			if (m2 == mtmp) continue;
-			if ((telepathic(m2->data) &&
+			if ((mon_prop(m2,TELEPAT) &&
 			    (rn2(2) || m2->mblinded)) || !rn2(10)) {
 				if (cansee(m2->mx, m2->my))
 				    pline("It locks on to %s.", mon_nam(m2));
@@ -698,9 +698,9 @@ register int after;
 #endif
 
 	/* teleport if that lies in our nature */
-	if(ptr == &mons[PM_TENGU] && !rn2(5) && !mtmp->mcan &&
-	   !tele_restrict(mtmp)) {
-	    if(mtmp->mhp < 7 || mtmp->mpeaceful || rn2(2))
+	if(mon_prop(mtmp,TELEPORT) && !rn2(ptr == &mons[PM_TENGU] ? 5 : 10) &&
+	        !tele_restrict(mtmp)) {
+	    if(!controls_teleport(mtmp) || rn2(2))
 		(void) rloc(mtmp, FALSE);
 	    else
 		mnexto(mtmp);
@@ -726,7 +726,7 @@ not_special:
 				      (dist2(omx, omy, gx, gy) <= 36));
 
 		if (!mtmp->mcansee ||
-		    (should_see && Invis && !perceives(ptr) && rn2(11)) ||
+		    (should_see && Invis && !mon_prop(mtmp,SEE_INVIS) && rn2(11)) ||
 		    (youmonst.m_ap_type == M_AP_OBJECT && youmonst.mappearance == STRANGE_OBJECT) || u.uundetected ||
 		    (youmonst.m_ap_type == M_AP_OBJECT && youmonst.mappearance == GOLD_PIECE && !likes_gold(ptr)) ||
 		    (mtmp->mpeaceful && !mtmp->isshk) ||  /* allow shks to follow */
@@ -1257,7 +1257,7 @@ register struct monst *mtmp;
 	   if you haven't moved away */
 	if (mx == u.ux && my == u.uy) goto found_you;
 
-	notseen = (!mtmp->mcansee || (Invis && !perceives(mtmp->data)));
+	notseen = (!mtmp->mcansee || (Invis && !mon_prop(mtmp,SEE_INVIS)));
 	/* add cases as required.  eg. Displacement ... */
 	if (notseen || Underwater) {
 	    /* Xorns can smell valuable metal like gold, treat as seen */
