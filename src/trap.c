@@ -2209,6 +2209,7 @@ const char *arg;
 		        mons[uwep->corpsenm].mname);
 		Sprintf(kbuf, "%s corpse", an(mons[uwep->corpsenm].mname));
 		instapetrify(kbuf);
+		if (!Stone_resistance) uwepgone();
 	}
 	/* Or your secondary weapon, if wielded */
 	if(u.twoweap && uswapwep && uswapwep->otyp == CORPSE &&
@@ -2217,6 +2218,7 @@ const char *arg;
 		        mons[uswapwep->corpsenm].mname);
 		Sprintf(kbuf, "%s corpse", an(mons[uswapwep->corpsenm].mname));
 		instapetrify(kbuf);
+		if (!Stone_resistance) uswapwepgone();
 	}
 }
 
