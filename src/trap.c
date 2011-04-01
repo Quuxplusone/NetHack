@@ -411,6 +411,7 @@ int *fail_reason;
 	coord cc;
 	boolean historic = (Role_if(PM_ARCHEOLOGIST) && !flags.mon_moving && (statue->spe & STATUE_HISTORIC));
 	char statuename[BUFSZ];
+	boolean was_wielded = FALSE;
 
 	Strcpy(statuename,the(xname(statue)));
 
@@ -463,7 +464,10 @@ int *fail_reason;
 	}
 
 	/* in case statue is wielded and hero zaps stone-to-flesh at self */
-	if (statue->owornmask) remove_worn_item(statue, TRUE);
+	if (statue->owornmask) {
+	    remove_worn_item(statue, TRUE);
+	    was_wielded = TRUE;
+	}
 
 	/* allow statues to be of a specific gender */
 	if (statue->spe & STATUE_MALE)
@@ -509,6 +513,17 @@ int *fail_reason;
 	if (x == u.ux && y == u.uy &&
 		Upolyd && hides_under(youmonst.data) && !OBJ_AT(x, y))
 	    u.uundetected = 0;
+
+	/*
+	 * If the player stone-to-fleshed a cockatrice statue that
+	 * he was wielding in his bare hands, then he gets stoned.
+	 * We should do it here rather than above, so that the
+	 * bones file contains the right objects.
+	 */
+	if (was_wielded && !uarmg && !Stone_resistance && touch_petrifies(mon->data)) {
+	    Sprintf(killer_buf, "attempting to wield a live %s", mon->data->mname);
+	    instapetrify(killer_buf);
+	}
 
 	if (fail_reason) *fail_reason = AS_OK;
 	return mon;
