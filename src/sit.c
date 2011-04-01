@@ -39,7 +39,7 @@ int
 dosit()
 {
 	static const char sit_message[] = "sit on the %s.";
-	register struct trap *trap;
+	register struct trap *trap = t_at(u.ux, u.uy);
 	register int typ = levl[u.ux][u.uy].typ;
 
 
@@ -60,16 +60,86 @@ dosit()
 	    goto in_water;
 	}
 
-	if(OBJ_AT(u.ux, u.uy)) {
+	/* #sit into a pit = you fall in and you're stupid */
+	if (!u.utrap && trap && (trap->ttyp == SPIKED_PIT || trap->ttyp == PIT)) {
+	    You("sit at the edge of the %spit%s.",
+		(trap->ttyp == SPIKED_PIT) ? "spiked " : "",
+		(Hallucination) ? " and contemplate the meaning of life" : "");
+	} else if(OBJ_AT(u.ux, u.uy)) {
 	    register struct obj *obj;
 
 	    obj = level.objects[u.ux][u.uy];
 	    You("sit on %s.", the(xname(obj)));
-	    if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
+	    if (obj->otyp == CREAM_PIE) {
+		pline("Yecch!");
+		delobj(obj);
+	    } else if (obj->otyp == EGG) {
+		int mnum = obj->corpsenm;
+		boolean righttype = (youmonst.data == &mons[mnum]);
+		boolean yours = obj->spe;
+		if (youmonst.data->cwt >= 2600 && !righttype) {
+		    /* note that a blue dragon will splat a red dragon's egg */
+		    pline("Splat!");
+		    delobj(obj);
+		} else if (mnum == NON_PM && yours) {
+		    /* your egg is dead */
+		    You_feel("sad for a moment.");
+		} else if (righttype && flags.female) {
+		    if (!yours)
+			You_feel("somehow out of place...");
+		    /* else no special message */
+		    incubate_egg(obj);
+		} else
+		    pline("It's not very comfortable...");
+                return 1;
+	    } else if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
 		pline("It's not very comfortable...");
 
-	} else if ((trap = t_at(u.ux, u.uy)) != 0 ||
-		   (u.utrap && (u.utraptype >= TT_LAVA))) {
+	    /*
+	       Heavy monsters (dragons, titanotheres, etc.) have an
+	       80% chance of breaking open a box by sitting on it.
+	    */
+	    if (Is_box(obj) && youmonst.data->cwt >= 2600 && rn2(5)) {
+		struct monst *shkp;
+		boolean costly = (*u.ushops && costly_spot(u.ux, u.uy));
+		long loss = 0L;
+		boolean otrp = obj->otrapped;
+		struct obj *otmp;
+
+		shkp = costly ? shop_keeper(*u.ushops) : 0;
+
+		pline("%s shatters under your weight!", The(xname(obj)));
+		if (otrp) (void) chest_trap(obj, RUMP, FALSE);
+
+		/* Put the contents on ground at the hero's feet. */
+		while ((otmp = obj->cobj) != 0) {
+		    obj_extract_self(otmp);
+		    if (otmp->oclass == POTION_CLASS ||
+			(objects[otmp->otyp].oc_material != PAPER && !rn2(3)))
+		    {
+			chest_shatter_msg(otmp);
+			if (costly)
+			    loss += stolen_value(otmp, u.ux, u.uy,
+					(boolean)shkp->mpeaceful, TRUE);
+			if (otmp->quan == 1L) {
+			    obfree(otmp, (struct obj *) 0);
+			    continue;
+			}
+			useup(otmp);
+		    }
+		    place_object(otmp, u.ux, u.uy);
+		    stackobj(otmp);
+		}
+
+		if (costly)
+		    loss += stolen_value(obj, u.ux, u.uy,
+				(boolean)shkp->mpeaceful, TRUE);
+		if(loss)
+		    You("owe %ld %s for objects destroyed.", loss, currency(loss));
+		delobj(obj);
+	    }
+
+	} else if (trap || (u.utrap && (u.utraptype >= TT_LAVA))) {
 
 	    if (u.utrap) {
 		exercise(A_WIS, FALSE);	/* you're getting stuck longer */
@@ -116,7 +186,7 @@ dosit()
 	} else if(IS_SINK(typ)) {
 
 	    You(sit_message, defsyms[S_sink].explanation);
-	    Your("%s gets wet.", humanoid(youmonst.data) ? "rump" : "underside");
+	    Your("%s gets wet.", mbodypart(&youmonst, RUMP));
 #endif
 	} else if(IS_ALTAR(typ)) {
 

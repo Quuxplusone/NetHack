@@ -863,6 +863,7 @@ E int FDECL(pick_lock, (struct obj *));
 E int NDECL(doforce);
 E boolean FDECL(boxlock, (struct obj *,struct obj *));
 E boolean FDECL(doorlock, (struct obj *,int,int));
+E void FDECL(chest_shatter_msg, (struct obj *));
 E int NDECL(doopen);
 E int NDECL(doclose);
 
@@ -1961,6 +1962,7 @@ E void NDECL(nh_timeout);
 E void FDECL(fall_asleep, (int, BOOLEAN_P));
 E void FDECL(attach_egg_hatch_timeout, (struct obj *));
 E void FDECL(attach_fig_transform_timeout, (struct obj *));
+E void FDECL(incubate_egg, (struct obj *));
 E void FDECL(kill_egg, (struct obj *));
 E void FDECL(hatch_egg, (genericptr_t, long));
 E void FDECL(learn_egg_type, (int));
