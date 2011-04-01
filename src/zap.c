@@ -2121,9 +2121,12 @@ boolean ordinary;
 		    struct obj *otemp, *onext;
 		    boolean didmerge;
 
-		    if (u.umonnum == PM_STONE_GOLEM)
+		    if (u.umonnum == PM_STONE_GOLEM) {
 			(void) polymon(PM_FLESH_GOLEM);
-		    if (Stoned) fix_petrification();	/* saved! */
+			if (!uarmg) selftouch("No longer petrify-resistant, you");
+		    } else {
+			if (Stoned) fix_petrification();	/* saved! */
+		    }
 		    /* but at a cost.. */
 		    for (otemp = invent; otemp; otemp = onext) {
 			onext = otemp->nobj;
