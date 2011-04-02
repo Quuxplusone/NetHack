@@ -1127,6 +1127,14 @@ dopois:
 		(void) adjattrib(A_INT, -rnd(2), FALSE);
 		forget_levels(25);	/* lose memory of 25% of levels */
 		forget_objects(25);	/* lose memory of 25% of objects */
+		if (mtmp->data == &mons[PM_MASTER_MIND_FLAYER] && rn2(3)) {
+		    int i;
+		    for (i=0; i < 5; ++i) tune[i] = 'A' + rn2(7);
+		    tune[5] = 0;
+		    if (u.uevent.uheard_tune > 1)
+			u.uevent.uheard_tune = 1;
+		    You("hear ringing and your head spins.");
+		}
 		exercise(A_WIS, FALSE);
 		break;
 	    case AD_PLYS:
