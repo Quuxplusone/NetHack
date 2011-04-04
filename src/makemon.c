@@ -286,7 +286,9 @@ register struct monst *mtmp;
 
 	    case S_HUMANOID:
 		if (mm == PM_HOBBIT) {
-		    switch (rn2(3)) {
+		    static boolean frodo_generated = FALSE;
+		    boolean is_frodo = frodo_generated ? FALSE : !rn2(10);
+		    switch (is_frodo ? 1 : rn2(3)) {
 			case 0:
 			    (void)mongets(mtmp, DAGGER);
 			    break;
@@ -296,9 +298,24 @@ register struct monst *mtmp;
 			case 2:
 			    (void)mongets(mtmp, SLING);
 			    break;
-		      }
-		    if (!rn2(10)) (void)mongets(mtmp, ELVEN_MITHRIL_COAT);
-		    if (!rn2(10)) (void)mongets(mtmp, DWARVISH_CLOAK);
+		    }
+		    if (is_frodo || !rn2(10)) (void)mongets(mtmp, ELVEN_MITHRIL_COAT);
+		    if (is_frodo || !rn2(10)) (void)mongets(mtmp, DWARVISH_CLOAK);
+		    if (is_frodo) {
+			/* Give this lucky hobbit a cursed gold ring. */
+			int i;
+			for (i = bases[(int)RING_CLASS]; i < NUM_OBJECTS; ++i) {
+			    if (objects[i].oc_class != RING_CLASS) break;
+			    if (strcmp(OBJ_DESCR(objects[i]), "gold")) continue;
+			    otmp = mksobj(i, TRUE, FALSE);
+			    if (otmp) {
+				curse(otmp);
+				(void)mpickobj(mtmp, otmp);
+			    }
+			    break;
+			}
+			frodo_generated = TRUE;
+		    }
 		} else if (is_dwarf(ptr)) {
 		    if (rn2(7)) (void)mongets(mtmp, DWARVISH_CLOAK);
 		    if (rn2(7)) (void)mongets(mtmp, IRON_SHOES);
