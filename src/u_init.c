@@ -1010,8 +1010,12 @@ register struct trobj *trop;
 		obj = addinv(obj);
 
 		/* Make the type known if necessary */
-		if (OBJ_DESCR(objects[otyp]) && obj->known)
+		if (OBJ_DESCR(objects[otyp]) && obj->known) {
 			discover_object(otyp, TRUE, FALSE);
+			/* hack: ID gems of rings in starting inv -AJO */
+			if (obj->oclass == RING_CLASS)
+				fully_identify_obj(obj);
+		}
 		if (otyp == OIL_LAMP)
 			discover_object(POT_OIL, TRUE, FALSE);
 
