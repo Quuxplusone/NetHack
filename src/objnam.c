@@ -117,7 +117,25 @@ register int otyp;
 		Strcpy(buf, "spellbook");
 		break;
 	case RING_CLASS:
+		/* handle "ring of foo (green stone)" -ajo */
 		Strcpy(buf, "ring");
+		if (dn) {
+		    int gemtyp = ring_to_gem(ocl);
+		    if (gemtyp && !objects[gemtyp].oc_name_known) {
+			if(nn) {
+			    /* no unique rings at the moment, but... */
+			    if (ocl->oc_unique)
+				Strcpy(buf, actualn);
+			    else
+				Sprintf(buf, "ring of %s", actualn);
+			}
+			dn = OBJ_DESCR(objects[gemtyp]);
+			if(un)
+			    Sprintf(eos(buf)," called %s",un);
+			Sprintf(eos(buf), " (%s stone)", dn);
+			return buf;
+		    }
+		}
 		break;
 	case AMULET_CLASS:
 		if(nn)
@@ -229,6 +247,22 @@ boolean juice;	/* whether or not to append " juice" to the name */
 
 #endif /* OVLB */
 #ifdef OVL1
+
+int
+ring_to_gem(oc)
+struct objclass *oc;
+{
+    register int i;
+    const char *dn = OBJ_DESCR(*oc);
+    register const char *zn = 0;
+    for(i = bases[GEM_CLASS]; i <= LAST_GEM; i++) {
+        if((zn = OBJ_NAME(objects[i])) && !strcmpi(dn, zn)) {
+            return i;
+	}
+    }
+    return 0;
+}
+
 
 char *
 xname(obj)
@@ -448,8 +482,16 @@ register struct obj *obj;
 			Sprintf(buf, "ring of %s", actualn);
 		else if(un)
 			Sprintf(buf, "ring called %s", un);
-		else
+		else {
+			/* gems may not be identified yet... */
+		        register int gemidx = ring_to_gem(&objects[obj->otyp]);
+			if(gemidx && !objects[gemidx].oc_name_known) {
+			    Sprintf(buf, "%s stone ring", OBJ_DESCR(objects[gemidx]));
+			} else {
 			Sprintf(buf, "%s ring", dn);
+			}
+			break;
+		}
 		break;
 	case GEM_CLASS:
 	    {
@@ -1784,6 +1826,7 @@ boolean from_user;
 	char oclass;
 	char *un, *dn, *actualn;
 	const char *name=0;
+	int chance;
 
 	cnt = spe = spesgn = typ = very = rechrg =
 		blessed = uncursed = iscursed =
@@ -2203,6 +2246,7 @@ srch:
 	    }
 	}
 	i = oclass ? bases[(int)oclass] : 1;
+	chance = 1;
 	while(i < NUM_OBJECTS && (!oclass || objects[i].oc_class == oclass)){
 		register const char *zn;
 
@@ -2223,8 +2267,28 @@ srch:
 			typ = i;
 			goto typfnd;
 		}
+
+		/* Allow user to wish for "(color) stone ring" -ajo */
+		if (dn && oclass == RING_CLASS) {
+		    char unidn[22]; /* >= sizeof("yellowish brown stone") */
+		    int gemidx = ring_to_gem(&objects[i]);
+		    if (gemidx) {
+			Sprintf(unidn, "%s stone", OBJ_DESCR(objects[gemidx]));
+			if (wishymatch(dn, unidn, FALSE)) {
+			    if (0 == rn2(chance++)) {
+				typ = i;
+			    }
+			}
+		    }
+		}
+
 		i++;
 	}
+	/* Wishing for a "green stone ring" sometimes drops out here with
+	   a jade ring, and sometimes drops out here with an emerald ring,
+           for example. -ajo */
+	if (typ) goto typfnd;
+
 	if (actualn) {
 		struct Jitem *j = Japanese_items;
 		while(j->item) {
