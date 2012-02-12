@@ -1555,8 +1555,7 @@ dodip()
 			rider_cant_reach(); /* not skilled enough to reach */
 #endif
 		    } else {
-			(void) get_wet(obj);
-			if (obj->otyp == POT_ACID) useup(obj);
+			if (get_wet(obj) && obj->otyp == POT_ACID) useup(obj);
 		    }
 		    return 1;
 		}
