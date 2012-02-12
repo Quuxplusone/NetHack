@@ -405,6 +405,7 @@ xchar x, y;
 	struct trap *trap;
 	char bhitroom;
 	boolean costly, isgold, slide = FALSE;
+	boolean obj_destroyed = FALSE;
 
 	/* if a pile, the "top" object gets kicked */
 	kickobj = level.objects[x][y];
@@ -553,7 +554,8 @@ xchar x, y;
 	mon = bhit(u.dx, u.dy, range, KICKED_WEAPON,
 		   (int FDECL((*),(MONST_P,OBJ_P)))0,
 		   (int FDECL((*),(OBJ_P,OBJ_P)))0,
-		   kickobj);
+		   kickobj, &obj_destroyed);
+	if (obj_destroyed) return 1;
 
 	if(mon) {
 	    if (mon->isshk &&

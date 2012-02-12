@@ -2470,7 +2470,7 @@ register struct	obj	*obj;
 	    } else if (u.dz) {
 		disclose = zap_updown(obj);
 	    } else {
-		(void) bhit(u.dx,u.dy, rn1(8,6),ZAPPED_WAND, bhitm,bhito, obj);
+		(void) bhit(u.dx,u.dy, rn1(8,6),ZAPPED_WAND, bhitm,bhito, obj, NULL);
 	    }
 	    /* give a clue if obj_zapped */
 	    if (obj_zapped)
@@ -2618,12 +2618,13 @@ register struct monst *mtmp;
  *  one is revealed for a weapon, but if not a weapon is left up to fhitm().
  */
 struct monst *
-bhit(ddx,ddy,range,weapon,fhitm,fhito,obj)
+bhit(ddx,ddy,range,weapon,fhitm,fhito,obj,obj_destroyed)
 register int ddx,ddy,range;		/* direction and range */
 int weapon;				/* see values in hack.h */
 int FDECL((*fhitm), (MONST_P, OBJ_P)),	/* fns called when mon/obj hit */
     FDECL((*fhito), (OBJ_P, OBJ_P));
 struct obj *obj;			/* object tossed/used */
+boolean *obj_destroyed;			/* has object been deallocated? Pointer to boolean, may be NULL */
 {
 	struct monst *mtmp;
 	uchar typ;
@@ -2671,6 +2672,7 @@ struct obj *obj;			/* object tossed/used */
 		    hits_bars(&obj, x - ddx, y - ddy,
 			      point_blank ? 0 : !rn2(5), 1)) {
 		/* caveat: obj might now be null... */
+		if (obj == NULL && obj_destroyed) { *obj_destroyed = TRUE; }
 		bhitpos.x -= ddx;
 		bhitpos.y -= ddy;
 		break;

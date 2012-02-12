@@ -940,6 +940,7 @@ boolean twoweap; /* used to restore twoweapon mode if wielded weapon returns */
 			return;
 		}
 	} else {
+		boolean obj_destroyed = FALSE;
 		urange = (int)(ACURRSTR)/2;
 		/* balls are easy to throw or at least roll */
 		/* also, this insures the maximum range of a ball is greater
@@ -983,11 +984,13 @@ boolean twoweap; /* used to restore twoweapon mode if wielded weapon returns */
 		mon = bhit(u.dx, u.dy, range, THROWN_WEAPON,
 			   (int FDECL((*),(MONST_P,OBJ_P)))0,
 			   (int FDECL((*),(OBJ_P,OBJ_P)))0,
-			   obj);
+			   obj, &obj_destroyed);
 
 		/* have to do this after bhit() so u.ux & u.uy are correct */
 		if(Is_airlevel(&u.uz) || Levitation)
 		    hurtle(-u.dx, -u.dy, urange, TRUE);
+
+		if (obj_destroyed) return;
 	}
 
 	if (mon) {
@@ -1748,7 +1751,7 @@ struct obj *obj;
 			mon = bhit(u.dx, u.dy, range, THROWN_WEAPON,
 				   (int FDECL((*),(MONST_P,OBJ_P)))0,
 				   (int FDECL((*),(OBJ_P,OBJ_P)))0,
-				   obj);
+				   obj, NULL);
 			if(mon) {
 			    if (ghitm(mon, obj))	/* was it caught? */
 				return 1;
