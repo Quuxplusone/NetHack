@@ -2464,8 +2464,7 @@ struct obj *obj;
 		verbalize("You used it, you bought it!");
 		bill_dummy_object(obj);
 	}
-	obj_extract_self(obj);
-	delobj(obj);
+	useup(obj);
 	return(0);
 }
 
