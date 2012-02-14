@@ -2019,6 +2019,7 @@ E void FDECL(minstapetrify, (struct monst *,BOOLEAN_P));
 E void FDECL(selftouch, (const char *));
 E void FDECL(mselftouch, (struct monst *,const char *,BOOLEAN_P));
 E void NDECL(float_up);
+E int FDECL(struggle_out_of_pit, (BOOLEAN_P));
 E void FDECL(fill_pit, (int,int));
 E int FDECL(float_down, (long, long));
 E int FDECL(fire_damage, (struct obj *,BOOLEAN_P,BOOLEAN_P,XCHAR_P,XCHAR_P));
