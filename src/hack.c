@@ -1136,7 +1136,8 @@ domove()
 	}
 	if(u.utrap) {
 		if(u.utraptype == TT_PIT) {
-		    struggle_out_of_pit(FALSE);
+		    if (struggle_out_of_pit(FALSE))
+			goto successful_move;
 		} else if (u.utraptype == TT_LAVA) {
 		    if(flags.verbose) {
 			predicament = "stuck in the lava";
@@ -1227,6 +1228,7 @@ domove()
 		return;
 	}
 
+    successful_move:
 	if (!test_move(u.ux, u.uy, x-u.ux, y-u.uy, DO_MOVE)) {
 	    flags.move = 0;
 	    nomul(0);
