@@ -1463,6 +1463,8 @@ STATIC_OVL boolean
 able_to_loot(x, y)
 int x, y;
 {
+	struct trap *traphere;
+
 	if (!can_reach_floor()) {
 #ifdef STEED
 		if (u.usteed && P_SKILL(P_RIDING) < P_BASIC)
@@ -1475,6 +1477,12 @@ int x, y;
 		/* at present, can't loot in water even when Underwater */
 		You("cannot loot things that are deep in the %s.",
 		    is_lava(x, y) ? "lava" : "water");
+		return FALSE;
+	} else if ((traphere = t_at(u.ux, u.uy)) != 0 && traphere->tseen &&
+		   (traphere->ttyp == PIT || traphere->ttyp == SPIKED_PIT) &&
+		     (!u.utrap || (u.utrap && u.utraptype != TT_PIT))) {
+		/* see matching test in dopickup() */
+		You("cannot reach the bottom of the pit.");
 		return FALSE;
 	} else if (nolimbs(youmonst.data)) {
 		pline("Without limbs, you cannot loot anything.");

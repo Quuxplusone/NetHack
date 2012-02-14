@@ -2406,6 +2406,7 @@ floorfood(verb,corpsecheck)	/* get food from floor or pack */
 	char qbuf[QBUFSZ];
 	char c;
 	boolean feeding = (!strcmp(verb, "eat"));
+	struct trap *traphere = t_at(u.ux, u.uy);
 
 	/* if we can't touch floor objects then use invent food only */
 	if (!can_reach_floor() ||
@@ -2416,6 +2417,14 @@ floorfood(verb,corpsecheck)	/* get food from floor or pack */
 		    (Wwalking || is_clinger(youmonst.data) ||
 			(Flying && !Breathless))))
 	    goto skipfloor;
+
+ 	if (traphere && traphere->tseen) {
+		/* see matching test in dopickup() */
+		if ((traphere->ttyp == PIT || traphere->ttyp == SPIKED_PIT) &&
+		     (!u.utrap || (u.utrap && u.utraptype != TT_PIT))) {
+			goto skipfloor;
+		}
+	}
 
 	if (feeding && metallivorous(youmonst.data)) {
 	    struct obj *gold;
