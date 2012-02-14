@@ -759,10 +759,7 @@ dodown()
 	if (u.usteed && !u.usteed->mcanmove) {
 		pline("%s won't move!", Monnam(u.usteed));
 		return(0);
-	} else if (u.usteed && u.usteed->meating) {
-		pline("%s is still eating.", Monnam(u.usteed));
-		return(0);
-	} else
+	}
 #endif
 	if (Levitation) {
 	    if ((HLevitation & I_SPECIAL) || (ELevitation & W_ARTI)) {
@@ -786,6 +783,12 @@ dodown()
 	    floating_above(stairs_down ? "stairs" : ladder_down ?
 			   "ladder" : surface(u.ux, u.uy));
 	    return (0);   /* didn't move */
+	}
+	if(u.ustuck) {
+		You("are %s, and cannot go down.",
+			!u.uswallow ? "being held" : is_animal(u.ustuck->data) ?
+			"swallowed" : "engulfed");
+		return(1);
 	}
 	if (!stairs_down && !ladder_down) {
 	    if (trap && !u.utrap && (trap->ttyp == SPIKED_PIT || trap->ttyp == PIT)) {
@@ -819,12 +822,12 @@ dodown()
 		}
 	    }
 	}
-	if(u.ustuck) {
-		You("are %s, and cannot go down.",
-			!u.uswallow ? "being held" : is_animal(u.ustuck->data) ?
-			"swallowed" : "engulfed");
-		return(1);
+#ifdef STEED
+	if (u.usteed && u.usteed->meating) {
+		pline("%s is still eating.", Monnam(u.usteed));
+		return(0);
 	}
+#endif
 	if (on_level(&valley_level, &u.uz) && !u.uevent.gehennom_entered) {
 		You("are standing at the gate to Gehennom.");
 		pline("Unspeakable cruelty and harm lurk down there.");
@@ -856,22 +859,15 @@ dodown()
 int
 doup()
 {
-	if( (u.ux != xupstair || u.uy != yupstair)
-	     && (!xupladder || u.ux != xupladder || u.uy != yupladder)
-	     && (!sstairs.sx || u.ux != sstairs.sx || u.uy != sstairs.sy
-			|| !sstairs.up)
-	  ) {
-		You_cant("go up here.");
-		return(0);
-	}
+	boolean stairs_up = ((u.ux == xupstair && u.uy == yupstair) ||
+		    (u.ux == sstairs.sx && u.uy == sstairs.sy && sstairs.up)),
+		ladder_up = (u.ux == xupladder && u.uy == yupladder);
+
 #ifdef STEED
 	if (u.usteed && !u.usteed->mcanmove) {
 		pline("%s won't move!", Monnam(u.usteed));
 		return(0);
-	} else if (u.usteed && u.usteed->meating) {
-		pline("%s is still eating.", Monnam(u.usteed));
-		return(0);
-	} else
+	}
 #endif
 	if(u.ustuck) {
 		You("are %s, and cannot go up.",
@@ -879,6 +875,19 @@ doup()
 			"swallowed" : "engulfed");
 		return(1);
 	}
+	if (u.utrap && u.utraptype == TT_PIT) {
+		struggle_out_of_pit(TRUE); /* upward */
+		return 1;
+	} else if (!stairs_up && !ladder_up) {
+	    	You_cant("go up here.");
+		return(0);
+	}
+#ifdef STEED
+	if (u.usteed && u.usteed->meating) {
+		pline("%s is still eating.", Monnam(u.usteed));
+		return(0);
+	}
+#endif
 	if(near_capacity() > SLT_ENCUMBER) {
 		/* No levitation check; inv_weight() already allows for it */
 		Your("load is too heavy to climb the %s.",
