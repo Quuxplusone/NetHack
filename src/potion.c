@@ -332,28 +332,30 @@ dodrink()
 		pline("If you can't breathe air, how can you drink liquid?");
 		return 0;
 	}
-	/* Is there a fountain to drink from here? */
-	if (IS_FOUNTAIN(levl[u.ux][u.uy].typ) && !Levitation) {
-		if(yn("Drink from the fountain?") == 'y') {
-			drinkfountain();
-			return 1;
+	if (!u.uswallow) {
+		/* Is there a fountain to drink from here? */
+		if (IS_FOUNTAIN(levl[u.ux][u.uy].typ) && !Levitation) {
+			if(yn("Drink from the fountain?") == 'y') {
+				drinkfountain();
+				return 1;
+			}
 		}
-	}
 #ifdef SINKS
-	/* Or a kitchen sink? */
-	if (IS_SINK(levl[u.ux][u.uy].typ)) {
-		if (yn("Drink from the sink?") == 'y') {
-			drinksink();
-			return 1;
+		/* Or a kitchen sink? */
+		if (IS_SINK(levl[u.ux][u.uy].typ)) {
+			if (yn("Drink from the sink?") == 'y') {
+				drinksink();
+				return 1;
+			}
 		}
-	}
 #endif
 
-	/* Or are you surrounded by water? */
-	if (Underwater) {
-		if (yn("Drink the water around you?") == 'y') {
-		    pline("Do you know what lives in this water!");
-			return 1;
+		/* Or are you surrounded by water? */
+		if (Underwater) {
+			if (yn("Drink the water around you?") == 'y') {
+				pline("Do you know what lives in this water?!");
+				return 1;
+			}
 		}
 	}
 
@@ -1537,27 +1539,29 @@ dodip()
 		return(0);
 
 	here = levl[u.ux][u.uy].typ;
-	/* Is there a fountain to dip into here? */
-	if (IS_FOUNTAIN(here)) {
-		if(yn("Dip it into the fountain?") == 'y') {
-			dipfountain(obj);
-			return(1);
-		}
-	} else if (is_pool(u.ux,u.uy)) {
-		tmp = waterbody_name(u.ux,u.uy);
-		Sprintf(qbuf, "Dip it into the %s?", tmp);
-		if (yn(qbuf) == 'y') {
-		    if (Levitation) {
-			floating_above(tmp);
+	if (!u.uswallow) {
+		/* Is there a fountain to dip into here? */
+		if (IS_FOUNTAIN(here)) {
+			if(yn("Dip it into the fountain?") == 'y') {
+				dipfountain(obj);
+				return(1);
+			}
+		} else if (is_pool(u.ux,u.uy)) {
+			tmp = waterbody_name(u.ux,u.uy);
+			Sprintf(qbuf, "Dip it into the %s?", tmp);
+			if (yn(qbuf) == 'y') {
+			    if (Levitation) {
+				floating_above(tmp);
 #ifdef STEED
-		    } else if (u.usteed && !is_swimmer(u.usteed->data) &&
-			    P_SKILL(P_RIDING) < P_BASIC) {
-			rider_cant_reach(); /* not skilled enough to reach */
+			    } else if (u.usteed && !is_swimmer(u.usteed->data) &&
+				    P_SKILL(P_RIDING) < P_BASIC) {
+				rider_cant_reach(); /* not skilled enough to reach */
 #endif
-		    } else {
-			if (get_wet(obj) && obj->otyp == POT_ACID) useup(obj);
-		    }
-		    return 1;
+			    } else {
+				if (get_wet(obj) && obj->otyp == POT_ACID) useup(obj);
+			    }
+			    return 1;
+			}
 		}
 	}
 
