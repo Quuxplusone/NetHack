@@ -95,7 +95,7 @@ use_towel(obj)
 	if(!freehand()) {
 		You("have no free %s!", body_part(HAND));
 		return 0;
-	} else if (obj->owornmask) {
+	} else if (obj->owornmask == W_TOOL) {
 		You("cannot use it while you're wearing it!");
 		return 0;
 	} else if (obj->cursed) {
