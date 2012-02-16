@@ -762,7 +762,7 @@ unsigned trflags;
 		if(Levitation || Flying) break;
 		seetrap(trap);
 		if(amorphous(youmonst.data) || is_whirly(youmonst.data) ||
-						    unsolid(youmonst.data)) {
+			unsolid(youmonst.data) || youmonst.data == &mons[PM_WATER_ELEMENTAL]) {
 		    pline("%s bear trap closes harmlessly through you.",
 			    A_Your[trap->madeby_u]);
 		    break;
@@ -1803,7 +1803,8 @@ register struct monst *mtmp;
 		case BEAR_TRAP:
 			if(mptr->msize > MZ_SMALL &&
 				!amorphous(mptr) && !is_flyer(mptr) &&
-				!is_whirly(mptr) && !unsolid(mptr)) {
+				!is_whirly(mptr) && !unsolid(mptr) &&
+				mptr != &mons[PM_WATER_ELEMENTAL]) {
 			    mtmp->mtrapped = 1;
 			    if(in_sight) {
 				pline("%s is caught in %s bear trap!",
