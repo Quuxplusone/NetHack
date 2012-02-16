@@ -2265,7 +2265,7 @@ speak:
 		return;
 	    }
 	    Strcpy(buf, "\"For you, ");
-	    if (ANGRY(shkp)) Strcat(buf, "scum ");
+	    if (ANGRY(shkp)) Strcat(buf, "scum,");
 	    else {
 		static const char *honored[5] = {
 		  "good", "honored", "most gracious", "esteemed",
@@ -2275,11 +2275,12 @@ speak:
 		if (!is_human(youmonst.data)) Strcat(buf, " creature");
 		else
 		    Strcat(buf, (flags.female) ? " lady" : " sir");
+		Strcat(buf, ", only");
 	    }
 	    if(ininv) {
 		long quan = obj->quan;
 		obj->quan = 1L; /* fool xname() into giving singular */
-		pline("%s; only %ld %s %s.\"", buf, ltmp,
+		pline("%s %ld %s %s.\"", buf, ltmp,
 			(quan > 1L) ? "per" : "for this", xname(obj));
 		obj->quan = quan;
 	    } else
