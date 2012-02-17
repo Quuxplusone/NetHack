@@ -1399,12 +1399,14 @@ struct monst *mtmp;
 			pline("%s medallion begins to glow!",
 				s_suffix(Monnam(mtmp)));
 			makeknown(AMULET_OF_LIFE_SAVING);
-			if (attacktype(mtmp->data, AT_EXPL)
-			    || attacktype(mtmp->data, AT_BOOM))
-				pline("%s reconstitutes!", Monnam(mtmp));
-			else
-				pline("%s looks much better!", Monnam(mtmp));
-			pline_The("medallion crumbles to dust!");
+			if (canseemon(mtmp)) {
+			    if (attacktype(mtmp->data, AT_EXPL)
+				|| attacktype(mtmp->data, AT_BOOM))
+				    pline("%s reconstitutes!", Monnam(mtmp));
+			    else
+				    pline("%s looks much better!", Monnam(mtmp));
+			}
+			pline_The("medallion crumbles to dust.");
 		}
 		m_useup(mtmp, lifesave);
 		mtmp->mcanmove = 1;
