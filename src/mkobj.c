@@ -994,6 +994,9 @@ struct monst *mtmp;
 		mtmp2->nmon     = (struct monst *)0;
 		mtmp2->data     = (struct permonst *)0;
 		mtmp2->minvent  = (struct obj *)0;
+#ifndef GOLDOBJ
+		mtmp2->mgold = 0;
+#endif
 		otmp->oattached = OATTACHED_MONST;	/* mark it */
 	}
 	return otmp;

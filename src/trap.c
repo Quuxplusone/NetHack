@@ -480,6 +480,13 @@ int *fail_reason;
 	/* transfer any statue contents to monster's inventory */
 	while ((item = statue->cobj) != 0) {
 	    obj_extract_self(item);
+#ifndef GOLDOBJ
+	    if (item->otyp == GOLD_PIECE) {
+		mon->mgold += item->quan;
+		delobj(item);
+		continue;
+	    }
+#endif
 	    (void) add_to_minv(mon, item);
 	}
 	m_dowear(mon, TRUE);
