@@ -323,6 +323,47 @@ void introff() /* disable kbd interrupts if required*/
 #endif
 }
 
+#ifdef UNICODE
+void NDECL(utf8_mapon);
+void NDECL(utf8_mapoff);
+void NDECL(init_utf8_cons);
+
+void
+utf8_mapon()
+{
+#ifdef TTY_GRAPHICS
+       if (!strcmp(windowprocs.name, "tty")) {
+               fwrite("\033%@", 1, 3, stdout);
+       }
+#endif
+}
+
+void
+utf8_mapoff()
+{
+#ifdef TTY_GRAPHICS
+       if (!strcmp(windowprocs.name, "tty")) {
+               fwrite("\033%G", 1, 3, stdout);
+       }
+#endif
+}
+
+void
+init_utf8_cons()
+{
+#ifdef TTY_GRAPHICS
+       if (!strcmp(windowprocs.name, "tty")) {
+               atexit(utf8_mapon);
+               utf8_mapoff();
+#ifdef TEXTCOLOR
+               if (has_colors())
+                       iflags.use_color = TRUE;
+#endif
+       }
+#endif
+}
+#endif
+
 #ifdef _M_UNIX /* SCO UNIX (3.2.4), from Andreas Arens */
 #include <sys/console.h>
 
