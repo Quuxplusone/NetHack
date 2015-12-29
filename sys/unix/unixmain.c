@@ -31,6 +31,9 @@ static void FDECL(chdirx, (const char *, BOOLEAN_P));
 static boolean NDECL(whoami);
 static void FDECL(process_options, (int, char **));
 
+#ifdef UNICODE
+extern void NDECL(init_utf8_cons);
+#endif
 #ifdef _M_UNIX
 extern void NDECL(check_sco_console);
 extern void NDECL(init_sco_cons);
@@ -160,11 +163,13 @@ char *argv[];
     chdirx(dir, 1);
 #endif
 
+#ifndef UNICODE
 #ifdef _M_UNIX
     check_sco_console();
 #endif
 #ifdef __linux__
     check_linux_console();
+#endif
 #endif
     initoptions();
 #ifdef PANICTRACE
@@ -189,11 +194,15 @@ char *argv[];
     commit_windowchain();
 #endif
     init_nhwindows(&argc, argv); /* now we can set up window system */
+#ifdef UNICODE
+    init_utf8_cons();
+#else
 #ifdef _M_UNIX
     init_sco_cons();
 #endif
 #ifdef __linux__
     init_linux_cons();
+#endif
 #endif
 
 #ifdef DEF_PAGER
