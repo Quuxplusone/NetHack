@@ -246,7 +246,7 @@ update-ubuntu: $(GAME) recover $(VARDAT) dungeon spec_levs check-dlb
 #	in the /usr/lib/games/nethack/ directory.
 #	Notice that the correct command is "sudo make update-ubuntu".
 	cp src/$(GAME) /usr/lib/games/nethack/nethack-console
-	cp util/recover dat/nhdat /usr/lib/games/nethack/
+	cp util/recover dat/nhdat dat/symbols /usr/lib/games/nethack/
 	chgrp games /usr/lib/games/nethack/nethack-console
 	chgrp games /usr/lib/games/nethack/recover
 	chmod $(GAMEPERM) /usr/lib/games/nethack/nethack-console
