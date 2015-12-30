@@ -239,6 +239,19 @@ dofiles-nodlb:
 			$(CHGRP) $(GAMEGRP) $(DAT) ; \
 			chmod $(FILEPERM) $(DAT) )
 
+update-osx: $(GAME) recover $(VARDAT) dungeon spec_levs check-dlb
+#       Assume that homebrew/games/nethack has been installed
+#       already, and the user just wants to install this patched
+#       version over top of it.  On Homebrew, nethack lives
+#       in the /usr/local/Cellar/nethack/3.4.3 directory.
+#       Notice that the correct command is "sudo make update-osx".
+	cp src/$(GAME) /usr/local/Cellar/nethack/3.4.3/bin/nethack
+	cp dat/nhdat /usr/local/Cellar/nethack/3.4.3/libexec/
+	chown $(SUDO_USER):wheel /usr/local/Cellar/nethack/3.4.3/libexec/nhdat
+	chmod 644 /usr/local/Cellar/nethack/3.4.3/libexec/nhdat
+	rm -f /usr/local/Cellar/nethack/3.4.3/libexec/*.lev
+	rm -f /usr/local/Cellar/nethack/3.4.3/libexec/{help,hh,cmdhelp,history,opthelp,wizhelp,dungeon,tribute,bogusmon,data,engrave,epitaph,oracles,options,quest.dat,rumors}
+
 update: $(GAME) recover $(VARDAT) dungeon spec_levs
 #	(don't yank the old version out from under people who're playing it)
 	-mv $(INSTDIR)/$(GAME) $(INSTDIR)/$(GAME).old
