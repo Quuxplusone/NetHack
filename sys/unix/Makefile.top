@@ -246,9 +246,9 @@ update-osx: $(GAME) recover $(VARDAT) dungeon spec_levs check-dlb
 #       in the /usr/local/Cellar/nethack/3.4.3 directory.
 #       Notice that the correct command is "sudo make update-osx".
 	cp src/$(GAME) /usr/local/Cellar/nethack/3.4.3/bin/nethack
-	cp dat/nhdat /usr/local/Cellar/nethack/3.4.3/libexec/
-	chown $(SUDO_USER):wheel /usr/local/Cellar/nethack/3.4.3/libexec/nhdat
-	chmod 644 /usr/local/Cellar/nethack/3.4.3/libexec/nhdat
+	cp dat/{nhdat,symbols} /usr/local/Cellar/nethack/3.4.3/libexec/
+	chown $(SUDO_USER):wheel /usr/local/Cellar/nethack/3.4.3/libexec/{nhdat,symbols}
+	chmod 644 /usr/local/Cellar/nethack/3.4.3/libexec/{nhdat,symbols}
 	rm -f /usr/local/Cellar/nethack/3.4.3/libexec/*.lev
 	rm -f /usr/local/Cellar/nethack/3.4.3/libexec/{help,hh,cmdhelp,history,opthelp,wizhelp,dungeon,tribute,bogusmon,data,engrave,epitaph,oracles,options,quest.dat,rumors}
 
